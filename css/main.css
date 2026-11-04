@@ -198,6 +198,10 @@ button { font: inherit; color: inherit; }
 .btn-ghost svg { color: var(--mid); }
 .btn-sm { min-height: 42px; padding: .7em 1.1em; font-size: 12.5px; border-radius: 12px; }
 .btn-lg { min-height: 60px; padding: 1.15em 2em; font-size: 15px; }
+/* тёмное стекло — вторая кнопка рядом с салатовой на тёмном фоне (MAX в контактах) */
+.btn-glass { color: var(--g-head); background: rgba(6, 18, 10, .62); box-shadow: inset 0 0 0 1.5px rgba(241, 247, 234, .26); }
+.btn-glass:hover { transform: translateY(-2px); background: rgba(14, 32, 18, .78); box-shadow: inset 0 0 0 1.5px rgba(201, 231, 168, .55); }
+.btn .nd--sq svg { width: 1.6em; height: 1.6em; }
 
 /* ---- шапка ---- */
 .hdr { position: fixed; inset: 0 0 auto; z-index: 50; height: var(--hdr-h); color: var(--forest); transition: background-color .4s, box-shadow .4s, color .4s, transform .5s var(--ease-out); }
@@ -396,8 +400,16 @@ html:not(.js) [data-sound], html:not(.js) [data-open-sections] { display: none; 
 /* сверху и снизу ролик на 3 px короче сцены: край сцены обрезает только наложение, и при дробной прокрутке у края нет полосы */
 .sc-media { position: absolute; inset: 3px 0; margin: 0; transform: scale(.76); transform-origin: 100% 50%; }
 .is-flip .sc-media { transform-origin: 0 50%; }
-.sc-media video { display: block; width: 100%; height: 100%; object-fit: cover; object-position: var(--fx, 50%) 50%; }
-.sc-media video.is-m { object-position: 50% 50%; }
+/* .bloom — сам ролик или холст на его месте (main.js, canvasMode): кадрирование одно и то же, холст берёт фокус отсюда */
+.sc-media .bloom { display: block; width: 100%; height: 100%; object-fit: cover; object-position: var(--fx, 50%) 50%; }
+.sc-media .bloom.is-m { object-position: 50% 50%; }
+/* встроенные кнопки и бегунок, которые часть телефонных браузеров рисует поверх ролика и без controls. Каждое правило
+   отдельно: незнакомый браузеру селектор в общем списке выбросил бы всё правило целиком */
+video::-webkit-media-controls { display: none !important; }
+video::-webkit-media-controls-enclosure { display: none !important; }
+video::-webkit-media-controls-panel { display: none !important; }
+video::-webkit-media-controls-overlay-play-button { display: none !important; }
+video::-webkit-media-controls-start-playback-button { display: none !important; -webkit-appearance: none; }
 .sc-media noscript img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: var(--fx, 50%) 50%; }
 /* наложение свисает за край ролика: иначе на уменьшенном ролике у края просвечивает волосяная полоса */
 .sc-media::after {
@@ -795,6 +807,8 @@ html:not(.js) [data-sound], html:not(.js) [data-open-sections] { display: none; 
 .price-notes { display: grid; gap: 6px; margin-top: 10px; max-width: 76ch; font-size: 14px; line-height: 1.5; color: var(--g-muted); }
 .price-notes li { position: relative; padding-left: 16px; }
 .price-notes li::before { content: '*'; position: absolute; left: 0; color: var(--g-lime); }
+.price-notes a { color: var(--g-text); transition: color .2s; }
+.price-notes a:hover { color: var(--g-lime); }
 @media (min-width: 1101px) and (min-height: 760px) { .price-aside { position: sticky; top: calc(var(--hdr-h) + 22px); } }
 
 /* ============ контакты: тёмный плющ ============ */
@@ -815,11 +829,15 @@ html:not(.js) [data-sound], html:not(.js) [data-open-sections] { display: none; 
 /* строка поднимается вправо: поворот меньше и от нижнего края, отступ сверху с запасом — не наезжает на заголовок */
 .hand--contact { color: var(--g-lime); margin: 40px 0 10px; transform: rotate(-3deg); transform-origin: 0 100%; }
 .contact-list { display: grid; gap: 18px; margin-top: 34px; justify-items: start; }
-.contact-phone { font: 700 clamp(28px, 3vw, 40px)/1 var(--font-text); letter-spacing: -.02em; text-decoration: none; color: var(--g-head); font-variant-numeric: tabular-nums; }
+/* не ниже 44 px и на планшете боком (1024): там тоже палец */
+.contact-phone { display: inline-flex; align-items: center; min-height: 44px; font: 700 clamp(28px, 3vw, 40px)/1 var(--font-text); letter-spacing: -.02em; text-decoration: none; color: var(--g-head); font-variant-numeric: tabular-nums; }
 .contact-phone:hover { color: var(--g-lime); }
-.contact-avito { display: flex; flex-wrap: wrap; gap: 10px 22px; }
-.contact-avito a { font: 500 14px/1.4 var(--font-display); letter-spacing: .1em; text-transform: uppercase; color: var(--g-muted); }
-.contact-avito a:hover { color: var(--g-lime); }
+.contact-msgs { display: flex; flex-wrap: wrap; gap: 14px; }
+.contact-avito { display: flex; flex-wrap: wrap; gap: 10px; }
+/* Авито — ярлыки со значком. Подложка почти непрозрачная: подпись читается (контраст ≥ 4,5:1) и над светлым листом плюща */
+.av-chip { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 16px 6px 11px; border-radius: 12px; font: 500 14px/1.2 var(--font-display); letter-spacing: .09em; text-transform: uppercase; text-decoration: none; color: var(--g-text); background: rgba(6, 18, 10, .74); box-shadow: inset 0 0 0 1px rgba(241, 247, 234, .17); transition: transform .35s var(--ease-out), box-shadow .3s, color .3s; -webkit-tap-highlight-color: transparent; }
+.av-chip svg { width: 24px; height: 24px; }
+.av-chip:hover { color: var(--g-head); transform: translateY(-2px); box-shadow: inset 0 0 0 1px rgba(201, 231, 168, .5); }
 
 /* ---- подвал ---- */
 .footer { position: relative; z-index: 2; background: #040c06; color: #b4c3aa; padding: clamp(40px, 5vw, 70px) 0 30px; }
@@ -843,6 +861,34 @@ html:not(.js) [data-sound], html:not(.js) [data-open-sections] { display: none; 
 .wa-from { font: 500 12px/1.2 var(--font-display) !important; letter-spacing: .12em; text-transform: uppercase; color: var(--mid); margin-bottom: 6px !important; }
 .wa-close { position: absolute; top: 6px; right: 8px; width: 28px; height: 28px; border: 0; background: transparent; font-size: 22px; line-height: 1; cursor: pointer; color: var(--muted); border-radius: 50%; transition: background-color .3s, color .3s; }
 .wa-close:hover { background: var(--bg-2); color: var(--forest); }
+/* MAX — меньшая круглая кнопка над WhatsApp, по центру над ней (приветствие встаёт выше обеих); градиент как у значка MAX */
+.max-btn { width: 46px; height: 46px; margin-right: 7px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: linear-gradient(45deg, #41d3ff 0%, #3f5bf6 52%, #9b36ef 100%); box-shadow: 0 12px 24px -10px rgba(63, 91, 246, .75), inset 0 1px 0 rgba(255, 255, 255, .3); transition: transform .35s var(--ease-out); }
+.max-btn:hover { transform: scale(1.07); }
+.max-btn svg { width: 28px; height: 28px; }
+
+/* ---- «кивок» кнопок связи (main.js nudges) ----
+   Раз в 6–9 с одна кнопка блока по очереди (WhatsApp → MAX → Авито) наклоняет значок туда-обратно (до 8°, затухая),
+   от значка расходится тонкое бледное кольцо. Только transform и opacity, без мигания. Без анимаций (reduce) main.js его
+   не запускает; при gl-lite — вдвое реже и без кольца. Наведение мышью — то же кольцо (подъём даёт сама кнопка) */
+span.nd { position: relative; display: inline-grid; place-items: center; flex: none; }
+.nd::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 1.5px solid var(--nd-ring, currentColor); opacity: 0; pointer-events: none; }
+.nd--sq::after { border-radius: 34%; }
+.nd > svg { transform-origin: 50% 62%; }
+.wa-btn, .max-btn { position: relative; }
+.wa-btn::after, .max-btn::after { inset: 0; border-width: 2px; }
+.btn-lime { --nd-ring: var(--forest); }
+.btn-glass, .av-chip { --nd-ring: var(--g-price); }
+.wa-btn { --nd-ring: var(--wa); }
+.max-btn { --nd-ring: #5b6cf6; }
+.is-nudge .nd > svg, .nd.is-nudge > svg { animation: nd-tilt .95s ease-in-out; }
+/* кольцо тает ровнее, чем --ease-out: с ним оно пропадало уже к 0,4 с и почти не читалось */
+.is-nudge .nd::after, .nd.is-nudge::after { animation: nd-ring 1s cubic-bezier(.3, .7, .4, 1); }
+html.gl-lite .is-nudge .nd::after, html.gl-lite .nd.is-nudge::after { animation: none; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  [data-nudge]:hover .nd::after, .nd[data-nudge]:hover::after { animation: nd-ring 1s cubic-bezier(.3, .7, .4, 1); }
+}
+@keyframes nd-tilt { 0%, 100% { transform: none; } 14% { transform: rotate(-8deg); } 32% { transform: rotate(6deg); } 50% { transform: rotate(-3.5deg); } 68% { transform: rotate(1.6deg); } 84% { transform: rotate(-.5deg); } }
+@keyframes nd-ring { from { opacity: .35; transform: scale(1); } to { opacity: 0; transform: scale(1.4); } }
 
 /* ---- быстрая связь на телефоне ---- */
 .mbar { display: none; }
@@ -899,7 +945,6 @@ html.menu-open.on-dark { background: #090d09; }
 
 /* ---- растения по бокам ---- */
 .deco { --deco-w: clamp(92px, 13vw, 232px); position: fixed; bottom: 0; z-index: 1; height: min(86vh, 880px); width: var(--deco-w); pointer-events: none; }
-@media (max-width: 900.98px) { .deco { opacity: .45; } } /* на телефоне растения проходят под текстом: приглушаем, чтобы не мешали читать */
 .deco-l { left: 0; } .deco-r { right: 0; }
 .deco > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform-origin: 0% 100%; will-change: transform; }
 .deco-r > svg { transform-origin: 100% 100%; }
@@ -912,13 +957,13 @@ html.menu-open.on-dark { background: #090d09; }
 /* в «Подсветке» у секции свой тёмный фон — гирлянды поднимаем над ним, но только там, где для них есть поля (≥1101 px);
    на узких экранах они остаются под текстом */
 @media (min-width: 1101px) { .deco-front .deco, .deco-front .drift { z-index: 3; } }
-/* На ноутбуках и планшетах поля страницы (35–270 px) узки для растений (13vw). Блок растения — ровно поле страницы:
+/* На ноутбуках (901–1800 px) поля страницы (45–270 px) узки для растений (13vw). Блок растения — ровно поле страницы:
    у fixed-блока 100% — ширина окна без полосы прокрутки, поэтому край колонки .wrap совпадает точно (и на Windows).
    Рисунок ужимаем так, чтобы основная масса (по контракту — до x≈170 из 240) помещалась в поле, а тонкие кончики
    растворяются и пропадают за 2 px до колонки: на буквы растения не ложатся.
    От 1801 px поле (от 273 px) шире растения (232 px) — там всё как было, без маски.
    В «Подсветке» (deco-front) у колонки свои широкие поля под гирлянды, там размер прежний. */
-@media (min-width: 701px) and (max-width: 1800px) {
+@media (min-width: 901px) and (max-width: 1800px) {
   :root:not(.deco-front) .deco {
     width: calc((100% - min(100% - 2 * var(--gutter), 1240px)) / 2);
     -webkit-mask-image: linear-gradient(var(--deco-dir), #000 calc(100% - 14px), transparent calc(100% - 2px));
@@ -928,6 +973,27 @@ html.menu-open.on-dark { background: #090d09; }
   :root:not(.deco-front) .deco-r > svg { left: auto; }
   .deco-l { --deco-dir: to right; } .deco-r { --deco-dir: to left; }
 }
+/* Телефон и планшет (≤ 900 px): у сцен и блоков непрозрачный фон, под main растений не видно. Здесь они лежат поверх
+   содержимого (касания проходят насквозь), только у самых краёв экрана, в нижних углах: плотная часть — в поле страницы
+   (var(--gutter)), край к середине растворяется маской и сходит на нет в 10 px за началом текста. Из рисунка (240×900)
+   видна полоса в 100 единиц от края — стебли, листья, ближние цветы; высота — около трети экрана (390 px: 266 px,
+   планшет 768: не выше 40vh). На телефоне низ — над панелью «Позвонить / WhatsApp». «Подсветка» (deco-front) — так же;
+   :root — чтобы перебить общие правила .deco ниже по файлу. */
+@media (max-width: 900.98px) {
+  :root .deco {
+    --deco-b: calc(var(--gutter) + 10px);
+    z-index: 3; opacity: 1;
+    width: var(--deco-b); height: min(var(--deco-b) * 9, 40vh);
+    -webkit-mask-image: linear-gradient(var(--deco-dir), #000 calc(100% - 12px), transparent);
+            mask-image: linear-gradient(var(--deco-dir), #000 calc(100% - 12px), transparent);
+  }
+  :root .deco > svg { width: calc(var(--deco-b) * 2.4); }
+  /* огоньки гирлянд на тёмном фоне заметны и в растворе — полосу «Подсветки» сужаем, рисунок тот же */
+  :root.deco-front .deco { width: calc(var(--deco-b) - 6px); }
+  :root .deco-r > svg { left: auto; }
+  .deco-l { --deco-dir: to right; } .deco-r { --deco-dir: to left; }
+}
+@media (max-width: 700.98px) { :root .deco { bottom: calc(64px + env(safe-area-inset-bottom)); } }
 [tabindex="-1"]:focus { outline: none; }
 
 /* ---- появление ---- */
@@ -1034,7 +1100,7 @@ html.menu-open.on-dark { background: #090d09; }
   .lc-cta-sub { margin-top: -10px; }
   .lc-more { margin-top: -9px; padding-top: 25px; }
   .contact-list { gap: 10px; }
-  .contact-avito { gap: 0 22px; }
+  .contact-avito { gap: 8px; }
   .footer a:not(.logo) { display: block; padding-block: 12.5px; }
   .footer-nav, .footer-contacts { gap: 0; }
 }
@@ -1051,7 +1117,6 @@ html.menu-open.on-dark { background: #090d09; }
 }
 @media (max-width: 700.98px) {
   body { font-size: 16px; }
-  .deco { width: 64px; height: 44vh; opacity: .8; }
   /* внизу экрана своя панель «Позвонить / WhatsApp»: третья кнопка WhatsApp в шапке лишняя,
      а подсказка «Листайте» уходила под эту панель */
   .hdr-cta, .scroll-cue { display: none; }
@@ -1125,9 +1190,13 @@ html.menu-open.on-dark { background: #090d09; }
   .footer-contacts { padding-top: 22px; border-top: 1px solid var(--g-line); }
   .footer-legal { margin-top: 28px; }
   .wa-widget { display: none; }
-  .mbar { position: fixed; inset: auto 0 0; z-index: 61; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); background: rgba(244, 248, 238, .96); box-shadow: 0 -1px 0 var(--line); transition: background-color .4s, box-shadow .4s; }
-  .mbar a { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; border-radius: 12px; font: 500 15px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; color: var(--forest); box-shadow: inset 0 0 0 1.5px var(--line-2); }
+  /* три кнопки в строку и на 360 px: у короткой «MAX» колонка уже, подпись не переносится */
+  .mbar { position: fixed; inset: auto 0 0; z-index: 61; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .8fr) minmax(0, 1fr); gap: 6px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); background: rgba(244, 248, 238, .96); box-shadow: 0 -1px 0 var(--line); transition: background-color .4s, box-shadow .4s; }
+  .mbar a { display: flex; align-items: center; justify-content: center; gap: 7px; min-width: 0; min-height: 48px; padding-inline: 4px; border-radius: 12px; font: 500 14.5px/1 var(--font-display); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; text-decoration: none; color: var(--forest); box-shadow: inset 0 0 0 1.5px var(--line-2); }
   .mbar a svg { width: 20px; height: 20px; }
+  .mbar .nd--sq svg { width: 22px; height: 22px; }
+  .contact-msgs { display: grid; justify-self: stretch; gap: 10px; }
+  .contact-msgs .btn { width: 100%; }
   .mbar .mbar-wa { background: #157a43; color: #fff; box-shadow: none; }
   html.on-dark .mbar { background: rgba(6, 12, 8, .95); box-shadow: 0 -1px 0 rgba(241, 247, 234, .1); }
   html.on-dark .mbar a:not(.mbar-wa) { color: #eef3e6; box-shadow: inset 0 0 0 1.5px rgba(241, 247, 234, .25); }
@@ -1179,7 +1248,7 @@ html.menu-open.on-dark { background: #090d09; }
 /* на телефоне состояние наведения залипает после касания: кнопка оставалась приподнятой до следующего нажатия */
 @media (hover: none) {
   .btn:hover { transform: none; filter: none; }
-  .svc--link:hover, .sec-btn:hover { transform: none; }
+  .svc--link:hover, .sec-btn:hover, .av-chip:hover { transform: none; }
   .path:hover .path-arrow { transform: none; }
   .wa-close { top: 0; right: 0; width: 44px; height: 44px; }
 }

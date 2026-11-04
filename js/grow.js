@@ -56,10 +56,15 @@
     return new Promise((resolve) => {
       let i = 0;
       const step = () => {
+        // Первый элемент кадра — вне 6 мс: он платит за пересчёт стилей и раскладки страницы, который браузер всё равно
+        // сделал бы к отрисовке. На медленном движке этот пересчёт съедал весь срок, и за кадр собирался один элемент.
+        if (i < jobs.length) jobs[i++]();
         const end = performance.now() + 6;
         while (i < jobs.length && performance.now() < end) jobs[i++]();
         if (i < jobs.length) requestAnimationFrame(step);
-        else resolve(tl);
+        // Таймлайн — в объекте: у таймлайна GSAP есть then(), и resolve(tl) ждал бы конца анимации, а она на паузе —
+        // обещание не выполнялось никогда, и растения по бокам не появлялись ни на одном экране.
+        else resolve({ tl });
       };
       step();
     });

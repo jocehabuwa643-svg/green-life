@@ -2,7 +2,7 @@
 import { writeFileSync, rmSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { company, chapters, guarantees, steps, partners, reviews, promos, paths, delivery, faq, priceSheets, priceNotes, light, lawnSteps, lawnVideo } from './catalog.mjs';
+import { company, chapters, guarantees, steps, partners, reviews, promos, paths, delivery, faq, priceSheets, priceNotes, legalNote, light, lawnSteps, lawnVideo } from './catalog.mjs';
 
 // Иконки меню разделов (рисует отдельный файл); если его нет — листок.
 let menuIcons = {};
@@ -36,9 +36,11 @@ const picture = (im, cls = '', eager = false) => `<img${cls ? ` class="${cls}"` 
 // Ролик (vid в catalog.mjs). В разметке нет ни файла, ни постера: иначе 35 картинок грузились бы сразу при открытии страницы.
 // Источник под экран, постер (первый или последний кадр), ленивую загрузку и проигрывание ставит main.js, когда сцена подошла;
 // без скрипта виден <noscript>-кадр. Подпись для экранных дикторов — рядом, текстом.
+// Атрибуты после playsinline просят телефонные браузеры (iOS, X5/QQ, UC, Mi) не открывать ролик в своём плеере, без кнопок,
+// «картинки в картинке» и трансляции. Где этого мало, main.js рисует кадры на холсте (canvasMode).
 const bloom = (v) => {
   const phone = v.srcM ? ` data-src-m="${v.srcM}" data-start-m="${v.startM}" data-end-m="${v.endM}"` : '';
-  return `<video class="bloom" data-bloom="${v.mode}" data-src="${v.src}" data-start="${v.start}" data-end="${v.end}"${phone} muted playsinline preload="none" width="${v.w}" height="${v.h}" aria-hidden="true" disablepictureinpicture disableremoteplayback></video><noscript><img src="${v.end}" width="${v.w}" height="${v.h}" alt="" loading="lazy" decoding="async"></noscript><span class="sr-only">${esc(v.alt)}</span>`;
+  return `<video class="bloom" data-bloom="${v.mode}" data-src="${v.src}" data-start="${v.start}" data-end="${v.end}"${phone} muted playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5-page" preload="none" width="${v.w}" height="${v.h}" aria-hidden="true" disablepictureinpicture disableremoteplayback controlslist="nodownload nofullscreen noremoteplayback" x-webkit-airplay="deny"></video><noscript><img src="${v.end}" width="${v.w}" height="${v.h}" alt="" loading="lazy" decoding="async"></noscript><span class="sr-only">${esc(v.alt)}</span>`;
 };
 // Сцена-галерея: ролик на весь экран с растворяющимися краями, текст поднимается рядом на белом.
 const stage = (v) => `<div class="sc-stage"><figure class="sc-media">${bloom(v)}</figure><div class="sc-veil" aria-hidden="true"></div></div>`;
@@ -67,8 +69,17 @@ const photo = (name, cls = '') => {
 };
 
 const leafIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-leaf"/></svg>';
-const sprite = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-wa" viewBox="0 0 32 32"><path fill="currentColor" d="M16 3a13 13 0 0 0-11.2 19.6L3 29l6.6-1.7A13 13 0 1 0 16 3Zm0 23.7c-2 0-4-.6-5.7-1.6l-.4-.2-3.9 1 1-3.8-.3-.4A10.7 10.7 0 1 1 16 26.7Zm5.9-8c-.3-.2-1.9-1-2.2-1-.3-.1-.5-.2-.7.2l-1 1.2c-.2.2-.4.2-.7.1a8.8 8.8 0 0 1-4.4-3.8c-.3-.6.3-.5.9-1.7.1-.2 0-.4 0-.5l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5 1.9.8 2.7.9 3.6.7.6-.1 1.9-.8 2.1-1.5.3-.7.3-1.4.2-1.5-.1-.1-.3-.2-.6-.3Z"/></symbol><symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19C5 10 11 5 20 4c-1 9-6 15-15 15Z" fill="currentColor" opacity=".9"/><path d="M5 19 14 10" stroke="#f4f8ee" stroke-width="1.4" stroke-linecap="round" fill="none"/></symbol><symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h3.5l1.6 4-2.2 1.4a11 11 0 0 0 5.7 5.7l1.4-2.2 4 1.6V18a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2Z"/></symbol></svg>`;
+// Значок MAX — простыми фигурами по образцу заказчицы: толстое белое кольцо-«облачко» чуть выше и левее середины
+// (сверено со снимком: поле слева 0,12, справа 0,17), хвостик внизу слева. Градиент один на всю страницу (в спрайте),
+// поэтому его id не повторяется, сколько бы раз значок ни встречался.
+const maxGlyph = (c) => `<circle cx="15.2" cy="14.2" r="8.5" fill="none" stroke="${c}" stroke-width="5.6"/><path fill="${c}" d="M3.9 14.2v10.3c0 2.4 1.4 3.4 3.3 2.7l4.8-2.5Z"/>`;
+const sprite = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-wa" viewBox="0 0 32 32"><path fill="currentColor" d="M16 3a13 13 0 0 0-11.2 19.6L3 29l6.6-1.7A13 13 0 1 0 16 3Zm0 23.7c-2 0-4-.6-5.7-1.6l-.4-.2-3.9 1 1-3.8-.3-.4A10.7 10.7 0 1 1 16 26.7Zm5.9-8c-.3-.2-1.9-1-2.2-1-.3-.1-.5-.2-.7.2l-1 1.2c-.2.2-.4.2-.7.1a8.8 8.8 0 0 1-4.4-3.8c-.3-.6.3-.5.9-1.7.1-.2 0-.4 0-.5l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5 1.9.8 2.7.9 3.6.7.6-.1 1.9-.8 2.1-1.5.3-.7.3-1.4.2-1.5-.1-.1-.3-.2-.6-.3Z"/></symbol><symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19C5 10 11 5 20 4c-1 9-6 15-15 15Z" fill="currentColor" opacity=".9"/><path d="M5 19 14 10" stroke="#f4f8ee" stroke-width="1.4" stroke-linecap="round" fill="none"/></symbol><symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h3.5l1.6 4-2.2 1.4a11 11 0 0 0 5.7 5.7l1.4-2.2 4 1.6V18a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2Z"/></symbol><defs><linearGradient id="i-max-g" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#41D3FF"/><stop offset=".5" stop-color="#3F5BF6"/><stop offset="1" stop-color="#9B36EF"/></linearGradient></defs><symbol id="i-max" viewBox="0 0 32 32"><rect width="32" height="32" rx="8.6" fill="url(#i-max-g)"/>${maxGlyph('#fff')}</symbol><symbol id="i-max-o" viewBox="0 0 32 32">${maxGlyph('currentColor')}</symbol><symbol id="i-avito" viewBox="10 10 70 70"><circle cx="59" cy="59" r="16" fill="#97CF26"/><circle cx="29" cy="29" r="13" fill="#00AAFF"/><circle cx="59" cy="29" r="10" fill="#FF6163"/><circle cx="28.5" cy="58.5" r="7.5" fill="#A169F7"/></symbol></svg>`;
 const waIcon = '<svg viewBox="0 0 32 32" aria-hidden="true"><use href="#i-wa"/></svg>';
+const maxIcon = '<svg viewBox="0 0 32 32" aria-hidden="true"><use href="#i-max"/></svg>';
+const maxGlyphIcon = '<svg viewBox="0 0 32 32" aria-hidden="true"><use href="#i-max-o"/></svg>'; // только «облачко» — для круглой кнопки с градиентом
+const avitoIcon = '<svg viewBox="0 0 70 70" aria-hidden="true"><use href="#i-avito"/></svg>'; // четыре круга, поля обрезаны в самом symbol
+// Обёртка значка у кнопок связи: её «кивок» и кольцо запускает main.js (nudges). sq — кольцо по форме квадратного значка
+const nd = (svg, mod = '') => `<span class="nd${mod ? ` nd--${mod}` : ''}">${svg}</span>`;
 const phoneIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-phone"/></svg>';
 // Тонкие контурные иконки 24×24 (одна толщина линии на весь сайт).
 const icons = {
@@ -580,7 +591,7 @@ const deliveryBlock = () => `
     </div>
     <div class="faq">
       <h2 class="sec-title sec-title--sm" data-leaf-title>${hl('Частые *вопросы*')}</h2>
-      ${faq.map((f) => `<details class="faq-item" data-reveal><summary>${nbsp(f.q)}</summary><p>${nbsp(f.a)}</p></details>`).join('')}
+      ${faq.map((f) => `<details class="faq-item"${f.id ? ` id="${f.id}"` : ''} data-reveal><summary>${nbsp(f.q)}</summary><p>${nbsp(f.a)}</p></details>`).join('')}
     </div>
   </div>
 </section>`;
@@ -627,7 +638,7 @@ const priceList = () => `
       </aside>
     </div>
     <ul class="price-notes">
-      ${priceNotes.map((n) => `<li>${nbsp(n)}</li>`).join('')}
+      ${priceNotes.map((n) => `<li>${nbsp(n.text || n)}${n.more ? ` <a href="${n.more.href}">${nbsp(n.more.label)}</a>` : ''}</li>`).join('')}
     </ul>
   </div>
 </section>`;
@@ -641,10 +652,10 @@ const contact = () => `
       <h2 class="sec-title" id="contact-title" data-leaf-title>${hl('Подберём растения *под ваш участок*')}</h2>
       <p class="hand hand--contact" aria-hidden="true">Делаем пространство лучше!</p>
       <p class="sec-lead">${nbsp('Напишите Алёне — пришлём прайс, фото саженцев в наличии и условия доставки.')}</p>
-      <ul class="contact-list">
-        <li><a class="btn btn-lime btn-lg" href="${waMain}" target="_blank" rel="noopener">${waIcon}Написать в WhatsApp</a></li>
+      <ul class="contact-list" data-nudges>
+        <li class="contact-msgs"><a class="btn btn-lime btn-lg" data-nudge="wa" href="${waMain}" target="_blank" rel="noopener" aria-label="Написать в WhatsApp">${nd(waIcon)}Написать в WhatsApp</a><a class="btn btn-glass btn-lg" data-nudge="max" href="${company.max}" target="_blank" rel="noopener" aria-label="Написать в MAX">${nd(maxIcon, 'sq')}Написать в MAX</a></li>
         <li><a class="contact-phone" href="tel:${company.phoneHref}">${esc(company.phone)}</a></li>
-        <li class="contact-avito">${company.avito.map((a) => `<a href="${a.href}" target="_blank" rel="noopener">${esc(a.label)}</a>`).join('')}</li>
+        <li class="contact-avito">${company.avito.map((a) => `<a class="av-chip" data-nudge="avito" href="${a.href}" target="_blank" rel="noopener" aria-label="${esc(a.label)}: объявления Green Life">${nd(avitoIcon)}${esc(a.label)}</a>`).join('')}</li>
       </ul>
     </div>
   </div>
@@ -655,10 +666,10 @@ const footer = () => `
   <div class="wrap footer-grid">
     <div>${logo('logo--light')}<p class="footer-tag">${esc(company.tagline)}. ${esc(company.city)} и вся Россия.</p></div>
     <nav class="footer-nav" aria-label="Разделы">${chapters.map((c) => `<a href="#${c.id}">${esc(c.title)}</a>`).join('')}</nav>
-    <div class="footer-contacts"><a href="tel:${company.phoneHref}">${esc(company.phone)}</a><a href="${company.whatsapp}" target="_blank" rel="noopener">WhatsApp</a>${company.avito.map((a) => `<a href="${a.href}" target="_blank" rel="noopener">${esc(a.label)}</a>`).join('')}</div>
+    <div class="footer-contacts"><a href="tel:${company.phoneHref}">${esc(company.phone)}</a><a href="${company.whatsapp}" target="_blank" rel="noopener" aria-label="Написать в WhatsApp">WhatsApp</a><a href="${company.max}" target="_blank" rel="noopener" aria-label="Написать в MAX">MAX</a>${company.avito.map((a) => `<a href="${a.href}" target="_blank" rel="noopener">${esc(a.label)}</a>`).join('')}</div>
   </div>
   <div class="wrap footer-legal">
-    <p>${nbsp('Живые растения надлежащего качества обмену не подлежат — согласно перечню непродовольственных товаров, утверждённому Правительством РФ (позиция «Животные и растения»). При заказе с доставкой действуют правила дистанционной продажи (ст. 26.1 Закона РФ «О защите прав потребителей»).')}</p>
+    <p>${nbsp(legalNote)}</p>
     <p>© ${new Date().getFullYear()} Green Life · Благоустройство и озеленение</p>
   </div>
 </footer>`;
@@ -682,17 +693,19 @@ const sectionsMenu = () => `
 </div>`;
 
 const widget = () => `
-<div class="wa-widget" data-wa-widget>
+<div class="wa-widget" data-wa-widget data-nudges>
   <div class="wa-bubble" role="status" hidden>
     <button class="wa-close" type="button" aria-label="Скрыть сообщение">×</button>
     <p class="wa-from">${esc(company.founder)} · основатель Green Life</p>
     <p>Здравствуйте! Я Алёна. Пришлю прайс и фото саженцев в наличии — напишите мне.</p>
   </div>
-  <a class="wa-btn" href="${waMain}" target="_blank" rel="noopener" aria-label="Написать в WhatsApp">${waIcon}</a>
+  <a class="max-btn nd" data-nudge="max" href="${company.max}" target="_blank" rel="noopener" aria-label="Написать в MAX">${maxGlyphIcon}</a>
+  <a class="wa-btn nd" data-nudge="wa" href="${waMain}" target="_blank" rel="noopener" aria-label="Написать в WhatsApp">${waIcon}</a>
 </div>
-<nav class="mbar" aria-label="Быстрая связь">
+<nav class="mbar" aria-label="Быстрая связь" data-nudges>
   <a href="tel:${company.phoneHref}">${phoneIcon}Позвонить</a>
-  <a class="mbar-wa" href="${waMain}" target="_blank" rel="noopener">${waIcon}WhatsApp</a>
+  <a class="mbar-max" data-nudge="max" href="${company.max}" target="_blank" rel="noopener" aria-label="Написать в MAX">${nd(maxIcon, 'sq')}MAX</a>
+  <a class="mbar-wa" data-nudge="wa" href="${waMain}" target="_blank" rel="noopener" aria-label="Написать в WhatsApp">${nd(waIcon)}WhatsApp</a>
 </nav>`;
 
 const header = () => `
@@ -722,7 +735,7 @@ const jsonLd = {
       currenciesAccepted: 'RUB',
       address: { '@type': 'PostalAddress', addressLocality: company.city, addressRegion: 'Новосибирская область', addressCountry: 'RU' },
       areaServed: [{ '@type': 'City', name: 'Новосибирск' }, { '@type': 'Country', name: 'Россия' }],
-      sameAs: company.avito.map((a) => a.href),
+      sameAs: [company.max, ...company.avito.map((a) => a.href)],
       hasOfferCatalog: {
         '@type': 'OfferCatalog', name: 'Каталог саженцев и услуг',
         itemListElement: chapters.map((c) => ({ '@type': 'OfferCatalog', name: c.h2 || c.title, itemListElement: c.items.map((it) => ({ '@type': 'Offer', itemOffered: { '@type': 'Product', name: it.nameFull || it.name } })) })),
@@ -738,9 +751,14 @@ const lightChapters = chapters.filter((c) => !c.dark);
 const darkChapters = chapters.filter((c) => c.dark);
 
 // Запасной таймер. .fx прячет текст до его появления: если за 5 с страница не готова, снимаем .fx, и текст виден без анимации.
+// Но если main.js уже доехал и работает (на медленном телефоне запуск идёт 6–13 с), ждём его до 12 с: как только он
+// взялся за появление текста (GLReveal), .fx больше не снимаем — иначе весь текст встал бы на место без движения.
 // .js — кнопки и меню работают. Его снимаем, только если main.js ещё не доехал (без него кнопки мёртвые); доехав, main.js вернёт его сам.
 // Тогда же показываем постеры, но лишь сценам у экрана и в телефонном варианте: 35 картинок разом на слабой сети отбирали бы канал у самого скрипта.
-const bootScript = `<script>(function(){var r=document.documentElement,c=r.classList;c.add('js','fx');setTimeout(function(){if(c.contains('gl-ready'))return;c.remove('fx');if(window.GLMain)return;c.remove('js');var m=matchMedia('(max-width:700.98px)').matches,p=function(v){v.setAttribute('poster',m&&v.getAttribute('data-end-m')||v.getAttribute('data-end'))},l=document.querySelectorAll('video[data-end]');if(!window.IntersectionObserver)return l.forEach(p);var o=new IntersectionObserver(function(e){if(window.GLMain)return o.disconnect();e.forEach(function(x){if(x.isIntersecting){o.unobserve(x.target);p(x.target)}})},{rootMargin:'100% 0px'});l.forEach(function(v){o.observe(v)})},5000)})()</script>`;
+const bootScript = `<script>(function(){var r=document.documentElement,c=r.classList,t0=Date.now();c.add('js','fx');setTimeout(function f(){if(c.contains('gl-ready')||window.GLReveal)return;if(window.GLMain&&Date.now()-t0<12e3)return setTimeout(f,500);c.remove('fx');if(window.GLMain)return;c.remove('js');var m=matchMedia('(max-width:700.98px)').matches,p=function(v){v.setAttribute('poster',m&&v.getAttribute('data-end-m')||v.getAttribute('data-end'))},l=document.querySelectorAll('video[data-end]');if(!window.IntersectionObserver)return l.forEach(p);var o=new IntersectionObserver(function(e){if(window.GLMain)return o.disconnect();e.forEach(function(x){if(x.isIntersecting){o.unobserve(x.target);p(x.target)}})},{rootMargin:'100% 0px'});l.forEach(function(v){o.observe(v)})},5000)})()</script>`;
+// ?diag=1 — панель диагностики для проверки на телефоне (js/diag.js). Ошибки собираем с самого начала, до остальных скриптов:
+// первые три ошибки JS, отказы промисов и не загрузившиеся скрипты и стили. Без ?diag ничего не добавляется и не грузится.
+const diagScript = `<script>if(/[?&]diag=1(&|$)/.test(location.search))(function(){var d=window.GLDiag={err:[],nerr:0},add=function(m){d.nerr++;if(d.err.length<3)d.err.push(String(m).slice(0,170))};addEventListener('error',function(e){var t=e.target;if(t&&(t.tagName==='SCRIPT'||t.tagName==='LINK'))add('нет файла: '+String(t.src||t.href).split('/').pop());else if(e.message)add(e.message+' @'+String(e.filename||'').split('/').pop().split('?')[0]+':'+e.lineno)},true);addEventListener('unhandledrejection',function(e){var r=e.reason;add('promise: '+(r&&r.name?r.name+': '+r.message:r))});var s=document.createElement('script');s.src='js/diag.js?v=${V}';document.head.appendChild(s)})()</script>`;
 
 const html = `<!doctype html>
 <html lang="ru">
@@ -766,6 +784,7 @@ ${SITE ? `<link rel="canonical" href="${abs('')}">\n<meta property="og:url" cont
 <link rel="preload" href="fonts/montserrat-cyrillic-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/main.css?v=${V}">
 ${bootScript}
+${diagScript}
 <script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>
 </head>
 <body>

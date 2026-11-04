@@ -113,8 +113,13 @@
     const fromMenu = !!a.closest('#sections');
     if (fromMenu) closeSections(false);
     setNav(false);
+    // Вопрос из «Частых вопросов» (ссылка из сносок к прайсу) — сразу с раскрытым ответом и уже проявленный:
+    // пока он ждёт появления, он сдвинут вниз, и место прокрутки посчиталось бы со сдвигом.
+    const qa = el.tagName === 'DETAILS';
+    if (qa) { el.open = true; if (window.gsap) gsap.set(el, { opacity: 1, y: 0, overwrite: true }); }
+    decoAim(el);
     scrollToEl(el);
-    focusEl(el);
+    if (qa) el.querySelector('summary').focus({ preventScroll: true }); else focusEl(el);
     history.replaceState(null, '', id);
     if (fromMenu) setTimeout(() => window.dispatchEvent(new CustomEvent('gl:arrive', { detail: el.id })), 1300);
   });
@@ -196,6 +201,50 @@
     setTimeout(() => { timeOk = true; tryShow(); }, 25000);
   }
 
+  // Кнопки связи зовут написать, но не мигают: раз в 6–9 с одна кнопка блока по очереди (WhatsApp → MAX → Авито, ярлыки Авито
+  // сменяют друг друга) «кивает» значком, от него расходится бледное кольцо (CSS .is-nudge). У каждого блока (контакты,
+  // круглые кнопки на компьютере, нижняя панель телефона) свой случайный ритм — не в такт друг другу. Кнопки нет на экране
+  // или вкладка скрыта — пауза; без анимаций (reduce) — спокойно стоят; при gl-lite — вдвое реже, кольцо гасит CSS.
+  function nudges() {
+    if (reduce || !('IntersectionObserver' in window)) return;
+    const vis = new Set();
+    const groups = $$('[data-nudges]').map((el) => ({
+      kinds: ['wa', 'max', 'avito'].map((k) => $$(`[data-nudge="${k}"]`, el)).filter((a) => a.length),
+      k: 0, n: [0, 0, 0], t: 0,
+    })).filter((g) => g.kinds.length);
+    if (!groups.length) return;
+    const live = (g) => !document.hidden && g.kinds.some((a) => a.some((e) => vis.has(e)));
+    const stop = (g) => { clearTimeout(g.t); g.t = 0; };
+    const plan = (g, first) => {
+      stop(g);
+      if (!live(g)) return;
+      // первый раз — через 1,5–5 с после появления блока, дальше каждые 6–9 с
+      const ms = (first ? 1500 + Math.random() * 3500 : 6000 + Math.random() * 3000) * (root.classList.contains('gl-lite') ? 2 : 1);
+      g.t = setTimeout(() => fire(g), ms);
+    };
+    const fire = (g) => {
+      g.t = 0;
+      for (let i = 0; i < g.kinds.length; i++) {
+        const j = (g.k + i) % g.kinds.length, list = g.kinds[j], el = list[g.n[j] % list.length];
+        if (!vis.has(el)) continue; // эта кнопка за краем экрана — очередь следующей
+        g.k = j + 1;
+        g.n[j]++;
+        el.classList.remove('is-nudge');
+        void el.offsetWidth; // перезапуск CSS-анимации, если класс ещё не снят
+        el.classList.add('is-nudge');
+        setTimeout(() => el.classList.remove('is-nudge'), 1200);
+        break;
+      }
+      plan(g);
+    };
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => (e.isIntersecting ? vis.add(e.target) : vis.delete(e.target)));
+      groups.forEach((g) => (g.t ? live(g) || stop(g) : plan(g, true)));
+    });
+    groups.forEach((g) => g.kinds.flat().forEach((e) => io.observe(e)));
+    document.addEventListener('visibilitychange', () => groups.forEach((g) => (document.hidden ? stop(g) : g.t || plan(g, true))));
+  }
+
   // Подложка шапки — по обычному событию прокрутки: работает и без анимаций, и после пересчёта ScrollTrigger.
   const syncHdr = () => hdr.classList.toggle('is-scrolled', scrollY > 24);
   addEventListener('scroll', syncHdr, { passive: true });
@@ -253,20 +302,113 @@
   } else if (sndBtn) sndBtn.hidden = true;
 
   waWidget();
+  nudges();
 
   /* ---------- постеры роликов ---------- */
   // В разметке постера нет: все 35 картинок грузились бы сразу при открытии страницы. Его ставим, когда сцена подошла на ~1,5 экрана.
   // Пока не решено, что показывать (clipMode пуст), наблюдатель только отмечает, какие сцены рядом. Видео занят blooms().
   const phone = matchMedia('(max-width: 700.98px)').matches;
+  // Часть телефонных браузеров (Mi Браузер, Huawei, Oppo/Realme, Vivo, UC, QQ, Quark, Baidu) подменяет <video> своим плеером
+  // поверх страницы — с кнопками и бегунком, z-index не помогает. Там ролик живёт вне документа, а кадры рисуются на холсте
+  // на его месте. ?canvas=1 включает холст в любом браузере (для проверки), ?canvas=0 выключает. На iPhone и iPad те же
+  // приложения (UC, QQ, Baidu) работают на WebKit и ролик не подменяют — там холст сам не включается.
+  const canvasQ = new URLSearchParams(location.search).get('canvas');
+  const ua = navigator.userAgent;
+  const canvasMode = (canvasQ === '1' || (canvasQ !== '0' && !/iPhone|iPad|iPod|Macintosh/.test(ua)
+    && /MiuiBrowser|XiaoMi\/|HuaweiBrowser|HeyTapBrowser|VivoBrowser|OppoBrowser|UCBrowser|UCWEB|MQQBrowser|QQBrowser|Quark|baiduboxapp/.test(ua)))
+    && !!document.createElement('canvas').getContext;
+  const D = window.GLDiag || null; // панель ?diag=1 (js/diag.js); без неё null и ничего не считается
+  // Холст на месте ролика. На нём всегда последнее, что было: кадр ролика, пока тот загружен, иначе постер. Холст не очищаем —
+  // поэтому ни мигания, ни чёрных кадров. Кадрирование — как object-fit: cover с фокусом из CSS (object-position у .bloom),
+  // плотность — не выше 1,5 точки на CSS-пиксель и не выше самого источника. Рисуем только сцены на экране.
+  const fitIO = canvasMode && 'ResizeObserver' in window ? new ResizeObserver((es) => es.forEach((e) => e.target.glFit && e.target.glFit(e.contentRect))) : null;
+  // Умеет ли движок рисовать ролик вне документа: проверяем один раз, на первом кадре (WebKit для Windows даёт прозрачный кадр).
+  // Не умеет: холст включён вручную (?canvas=1) — возвращаем обычные <video>; включён сам (браузер с подменой) — постеры с последним кадром.
+  let canPaint = 0;
+  const paintable = (v) => {
+    try {
+      const t = document.createElement('canvas');
+      t.width = t.height = 1;
+      const g = t.getContext('2d');
+      g.drawImage(v, v.videoWidth / 2, v.videoHeight / 2, 1, 1, 0, 0, 1, 1);
+      return g.getImageData(0, 0, 1, 1).data[3] > 0;
+    } catch (e) { return true; } // проверить нельзя — считаем, что рисует
+  };
+  const noCanvas = () => { if (canvasQ === '1') clips.forEach((c) => c.unscreen()); else if (stopClips) stopClips(); };
+  function screen(c) {
+    const { v } = c;
+    const cv = document.createElement('canvas');
+    cv.className = v.className;
+    cv.setAttribute('aria-hidden', 'true');
+    v.replaceWith(cv);
+    const g = cv.getContext('2d');
+    let w = 0, h = 0, fx = 0.5, fy = 0.5, img = null, url = '', shown = null, off = false;
+    const draw = (s) => {
+      if (off) return;
+      if (s === v && !canPaint && (canPaint = paintable(v) ? 1 : -1) < 0) { noCanvas(); return; }
+      const nw = s.videoWidth || s.naturalWidth, nh = s.videoHeight || s.naturalHeight;
+      if (!nw || !nh || !w || !h) return;
+      const k = Math.max(w / nw, h / nh); // CSS-пикселей на точку источника
+      const d = Math.min(1.5, devicePixelRatio || 1, 1 / k);
+      const W = Math.round(w * d), H = Math.round(h * d);
+      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; } // смена размера стирает холст — рисуем тут же, в том же кадре
+      g.drawImage(s, (nw - w / k) * fx, (nh - h / k) * fy, w / k, h / k, 0, 0, W, H);
+      shown = s;
+    };
+    const live = () => c.on && shown === v; // ролик загружен и уже дал кадр: постер его не перекрывает
+    const frame = () => { if (c.on && v.readyState >= 2 && c.seen !== false) draw(v); };
+    c.paint = (u) => {
+      if (u !== url) {
+        url = u;
+        const im = (img = new Image());
+        im.decoding = 'async';
+        im.onload = () => { if (img === im && !live()) draw(im); };
+        im.src = u;
+      } else if (img && img.naturalWidth && !live()) draw(img);
+    };
+    cv.glFit = (r) => {
+      w = r ? r.width : cv.clientWidth;
+      h = r ? r.height : cv.clientHeight;
+      const p = getComputedStyle(cv).objectPosition.match(/-?[\d.]+(?=%)/g);
+      if (p) { fx = p[0] / 100; fy = (p[1] === undefined ? 50 : p[1]) / 100; }
+      if (live() && v.readyState >= 2) draw(v); else if (img && img.naturalWidth) draw(img);
+    };
+    if (fitIO) fitIO.observe(cv);
+    else { requestAnimationFrame(() => cv.glFit()); addEventListener('resize', () => cv.glFit()); }
+    c.redraw = () => { if (live()) frame(); };
+    c.unscreen = () => {
+      off = true;
+      if (fitIO) fitIO.unobserve(cv);
+      cv.replaceWith(v);
+      c.paint = c.redraw = null;
+      if (url) v.setAttribute('poster', url);
+      if (v.readyState >= 1 && v.paused) v.currentTime = v.currentTime; // вернувшийся на паузе ролик иначе чёрный до следующей перемотки
+    };
+    // кадры: requestVideoFrameCallback, где он есть, иначе каждый кадр страницы, пока ролик играет; перемотка — по seeked
+    let looping = false;
+    const loop = () => {
+      if (off || looping || v.paused || v.ended) return;
+      looping = true;
+      const next = () => { looping = false; frame(); loop(); };
+      if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(next); else requestAnimationFrame(next);
+    };
+    v.addEventListener('playing', loop);
+    ['seeked', 'pause', 'ended'].forEach((t) => v.addEventListener(t, frame));
+  }
   const clips = $$('video.bloom').map((v) => {
     // на телефоне — вертикальный срез вокруг сюжета: легче, и кадр уже подобран под экран
     const m = phone && v.dataset.srcM;
     if (m) v.classList.add('is-m');
-    return { v, box: v.closest('.scene'), src: m || v.dataset.src, start: m ? v.dataset.startM : v.dataset.start, end: m ? v.dataset.endM : v.dataset.end, near: false };
+    const c = { v, box: v.closest('.scene'), src: m || v.dataset.src, start: m ? v.dataset.startM : v.dataset.start, end: m ? v.dataset.endM : v.dataset.end, near: false };
+    if (canvasMode) screen(c);
+    if (D) { v.addEventListener('loadeddata', () => { c.got = true; }); v.addEventListener('playing', () => { c.played = true; }); }
+    return c;
   });
-  const pose = (c, url) => { if (c.v.getAttribute('poster') !== url) c.v.setAttribute('poster', url); };
+  const pose = (c, url) => { if (c.paint) c.paint(url); else if (c.v.getAttribute('poster') !== url) c.v.setAttribute('poster', url); };
   let clipMode = ''; // 'still' — только постеры, 'live' — ролики
-  let lowerClips = null;
+  let stopClips = null; // blooms(): выключить все ролики, оставив постеры с последним кадром
+  let lowerClips = null; // blooms(): scroll-ролики → once (слабое устройство с пальцем)
+  if (D) Object.assign(D, { clips, canvas: () => (canPaint < 0 ? `холст не рисует (${canvasQ === '1' ? 'вернули видео' : 'постеры'})` : canvasMode), mode: () => clipMode });
   const clipOf = new Map(clips.map((c) => [c.box, c]));
   const clipIO = 'IntersectionObserver' in window ? new IntersectionObserver((es) => es.forEach((e) => {
     const c = clipOf.get(e.target);
@@ -280,7 +422,7 @@
     }, c.near ? 120 : 0);
   }), { rootMargin: '150% 0px' }) : null;
   if (clipIO) clips.forEach((c) => clipIO.observe(c.box));
-  // Только постеры с последним кадром: «уменьшить движение», экономия трафика, слабая сеть, нет H.264, любой сбой.
+  // Только постеры с последним кадром: «уменьшить движение», сеть 2G, нет H.264, любой сбой.
   function stillClips() {
     clipMode = 'still';
     clips.forEach((c) => { if (c.near || !clipIO) pose(c, c.end); });
@@ -517,6 +659,7 @@
       if (now.length) gsap.to(now, { opacity: 1, y: 0, ...IN, stagger: Math.min(0.09, 0.6 / now.length), overwrite: true });
     }, { rootMargin: '0px 0px -10% 0px' });
     $$('[data-reveal]').forEach((el) => io.observe(el));
+    window.GLReveal = true; // запасной таймер в <head> больше не снимает .fx: текст проявит этот наблюдатель, даже если запуск ещё идёт
   }
 
   function manifest() {
@@ -571,14 +714,15 @@
 
   /* ---------- ролики ---------- */
   // Режимы: "scroll" — ролик идёт вместе с прокруткой и обратно при прокрутке назад; "once" — проигрывается один раз,
-  // когда сцена на виду, вне экрана на паузе, застывает на последнем кадре. На устройствах с пальцем scroll заменён на once:
-  // перемотка кадрами там самая рискованная, а проверить iPhone негде.
+  // когда сцена на виду, вне экрана на паузе, застывает на последнем кадре. Смесь режимов одна на компьютере, планшете и телефоне;
+  // на пальце scroll-ролик берётся в память целиком (whole), а на слабом устройстве с пальцем сторож кадров переводит его в once.
   // Память: одновременно качаются не больше двух роликов, ближние первыми; проскоченное не докачивается,
   // отыгравший once вне экрана и всё, что дальше трёх экранов, снимают src — браузер освобождает декодер и буфер.
   function blooms() {
     if (!clips.length || clipMode) return;
     const conn = navigator.connection;
-    const weakNet = conn && (conn.saveData || /2g$/.test(conn.effectiveType || ''));
+    // «Экономия трафика» (saveData, Турбо) ролики не выключает: телефонные файлы маленькие и качаются по одному. Только 2G — постеры.
+    const weakNet = conn && /2g$/.test(conn.effectiveType || '');
     const h264 = clips[0].v.canPlayType('video/mp4; codecs="avc1.640028"') !== '';
     if (reduce || weakNet || !h264) { stillClips(); return; }
 
@@ -592,8 +736,27 @@
       c.guard = setTimeout(() => free(c), 9000); // медленный файл не держит очередь
       c.on = true;
       c.v.preload = 'auto';
+      if (coarse && c.mode === 'scroll' && !c.net) { whole(c); return; }
       c.v.src = c.src;
       c.play(); // браузер сам дождётся данных; iOS без этого вызова вообще не начинает загрузку
+    };
+    // Scroll-ролик на пальце: файл целиком в память, перемотка — из неё. iOS без play() файл по сети не грузит, а play()
+    // пустил бы ролик сам по себе; перемотка по сети на телефоне ещё и ждёт каждый недокачанный кусок. Телефонный файл — около 1 МБ.
+    const whole = (c) => {
+      const gen = c.gen, ac = window.AbortController ? new AbortController() : null;
+      c.abort = ac;
+      fetch(c.src, ac ? { signal: ac.signal } : undefined)
+        .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(r.status))))
+        .then((b) => {
+          if (gen !== c.gen || c.dead) return;
+          c.abort = null;
+          c.blob = URL.createObjectURL(b.type ? b : b.slice(0, b.size, 'video/mp4')); // без типа iOS ролик из памяти не играет
+          c.v.src = c.blob;
+          free(c); // сеть свободна — очередь берёт следующий файл
+          // iOS может не читать даже заголовок ролика до первого play(): не готов за 1,5 с — будим (c.warm, сразу пауза)
+          setTimeout(() => { if (gen === c.gen && !c.ready && c.v.readyState < 1) c.warm(); }, 1500);
+        })
+        .catch((e) => { if (gen === c.gen && !(e && e.name === 'AbortError')) fail(c); });
     };
     function pump() {
       while (slots.size < 2 && queue.size) {
@@ -613,6 +776,7 @@
       queue.delete(c);
       free(c);
       c.gen++; // отменяет ещё не пришедшие ответы (play, fetch)
+      if (c.abort) { c.abort.abort(); c.abort = null; } // недокачанный файл бросаем, как браузер бросает снятый src
       c.ready = false;
       if (c.on) {
         c.on = false;
@@ -624,18 +788,65 @@
       }
       if (c.blob) { URL.revokeObjectURL(c.blob); c.blob = null; }
     };
-    // 404, нет кодека, браузер не даёт играть даже без звука — выключаем ролик, остаётся постер с последним кадром
+    // 404, нет кодека, сбой загрузки — выключаем ролик, остаётся постер с последним кадром
     const fail = (c) => {
       if (c.dead) return;
       c.dead = true;
+      if (D) D.failed = (D.failed || 0) + 1;
       unload(c);
       if (c.near) pose(c, c.end);
     };
-    const blocked = (c, e) => { if (e && e.name === 'NotAllowedError') fail(c); };
+    // Браузер не даёт запускать ролики сам (запрет автозапуска, экономия заряда): once-ролик идёт перемоткой (walk), а play()
+    // повторяется после первого действия посетителя — касания, щелчка, клавиши. Один слушатель на все ожидающие; прокрутка пальцем
+    // действием не считается, поэтому отказ снова ставит ролик в ожидание. Scroll-ролики перематываются и без play().
+    const waiting = new Set();
+    const listen = (on) => ['pointerup', 'touchend', 'click', 'keydown'].forEach((t) => (on ? addEventListener(t, retry, { capture: true, passive: true }) : removeEventListener(t, retry, true)));
+    function retry() {
+      const list = [...waiting];
+      waiting.clear();
+      listen(false);
+      list.forEach((c) => (c.mode === 'scroll' ? c.warm() : c.play()));
+    }
+    const blocked = (c, e) => {
+      if (!e || e.name !== 'NotAllowedError' || c.dead) return;
+      if (D) D.refused = (D.refused || 0) + 1;
+      if (c.mode === 'once') walk(c);
+      if (!waiting.size) listen(true);
+      waiting.add(c);
+    };
+    // Отказ play() у once-ролика (iPhone в энергосбережении, Яндекс с экономией): касания ждать не нужно — ролик идёт
+    // перемоткой с той же скоростью 1,25×, не чаще 24 раз в секунду и только после конца прошлой перемотки (seeked),
+    // и застывает на последнем кадре, как обычный once. Удался play() после касания — дальше играет сам с того же места.
+    // Сцена ушла с экрана — ход стоит (вернулась — снова play(), снова отказ, ход дальше); выгрузка ход обрывает.
+    // На холсте кадр рисуется по seeked (screen). Данные — тот же файл по сети, что и для play(): лишнего трафика нет.
+    const walk = (c) => {
+      if (c.walking) return;
+      c.walking = true;
+      if (D) D.walked = (D.walked || 0) + 1;
+      const { v } = c, gen = c.gen;
+      let last = 0;
+      const tick = (now) => {
+        if (gen !== c.gen || c.dead || c.done || !c.vis || !v.paused) { c.walking = false; return; }
+        // время считаем с первого кадра: пока нет даже заголовка ролика, начало не проскакиваем
+        if (v.readyState < 1 || !last) last = now;
+        else if (!v.seeking && now - last >= 41) {
+          const end = Math.max(0, v.duration - 0.06); // в самый последний кадр не встаём — как у scroll-роликов
+          const t = Math.min(end, v.currentTime + Math.min(0.25, (now - last) / 1000) * 1.25);
+          last = now;
+          v.currentTime = t;
+          if (t >= end) { c.done = true; c.walking = false; return; }
+        }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
 
     const byStage = new Map();
     const stageIO = new IntersectionObserver((es) => es.forEach((e) => {
       const c = byStage.get(e.target);
+      const was = c.seen;
+      c.seen = e.isIntersecting;
+      if (c.redraw && c.seen && !was) c.redraw(); // холст рисует только сцены на экране; вернулась на экран — сразу текущий кадр
       if (e.intersectionRatio >= 0.5) { c.vis = true; c.play(); }
       else if (e.intersectionRatio < 0.15) {
         c.vis = false;
@@ -654,7 +865,7 @@
 
     clips.forEach((c) => {
       const { v, box } = c;
-      c.mode = coarse ? 'once' : v.dataset.bloom;
+      c.mode = v.dataset.bloom;
       c.gen = 0;
       c.play = () => {
         if (c.mode !== 'once' || c.dead || c.done || !c.vis) return;
@@ -663,7 +874,7 @@
         v.defaultPlaybackRate = 1.25;
         v.playbackRate = 1.25;
         const gen = c.gen;
-        Promise.resolve(v.play()).catch((e) => { if (gen === c.gen) blocked(c, e); });
+        Promise.resolve(v.play()).catch((e) => { if (D) D.playErr = e && e.name; if (gen === c.gen) blocked(c, e); });
       };
       // Наблюдатель в начале main.js сообщает, что сцена подошла или отошла.
       c.update = () => {
@@ -672,8 +883,22 @@
         if (c.near) { pose(c, poster(c)); want(c); }
         else if (queue.has(c)) queue.delete(c);
         else if (slots.has(c)) unload(c); // уже проскочили: не докачиваем
+        else if (coarse && c.mode === 'scroll' && c.on) unload(c); // на пальце scroll-ролик за полтора экрана сразу отдаёт память
       };
-      v.addEventListener('error', () => { if (v.getAttribute('src')) fail(c); });
+      v.addEventListener('error', () => {
+        if (!v.getAttribute('src')) return;
+        // ролик из памяти движок не открыл (так бывает у WebKit) — один раз пробуем обычную загрузку по сети, дальше только её
+        if (c.blob && !c.net) {
+          if (D) D.blobErr = (D.blobErr || 0) + 1;
+          c.net = true;
+          URL.revokeObjectURL(c.blob);
+          c.blob = null;
+          v.src = c.src;
+          if (c.mode === 'scroll') c.warm(); else c.play(); // iOS без play() файл по сети не грузит; scroll — сразу пауза
+          return;
+        }
+        fail(c);
+      });
       v.addEventListener('suspend', () => free(c));
       v.addEventListener('ended', () => { if (c.mode === 'once') c.done = true; });
       if (c.mode === 'scroll') scrollClip(c, fail, blocked);
@@ -683,19 +908,17 @@
       farIO.observe(box);
     });
     clipMode = 'live';
-    clips.forEach((c) => { if (c.near) c.update(); });
-
-    // Слабое устройство (lowerLoad): оставшиеся scroll-ролики доигрывают сами, с того места, где стоят.
+    stopClips = () => clips.forEach(fail);
+    // Слабое устройство с пальцем (сторож кадров, lowerLoad): перемотка кадрами там дороже всего, scroll-ролики дальше идут как once.
+    // Почти раскрытый (t > 0,97) застывает на последнем кадре, начатый доигрывает с того места, где стоит.
     lowerClips = () => clips.forEach((c) => {
-      if (c.mode !== 'scroll') return;
+      if (c.mode !== 'scroll' || c.dead) return;
+      if (c.tween) { c.tween.scrollTrigger.kill(); c.tween.kill(); c.tween = null; }
       c.mode = 'once';
-      c.tween.scrollTrigger.kill();
-      c.tween.kill();
-      c.begun = c.st.t > 0;
-      c.done = c.st.t > 0.97;
-      if (c.done && !c.vis) unload(c);
-      c.play();
+      if (c.st.t > 0.97) c.begun = c.done = true;
+      else c.play();
     });
+    clips.forEach((c) => { if (c.near) c.update(); });
   }
 
   // Ролик, привязанный к прокрутке. Широкий экран: от подхода сцены до середины чтения, когда сцена стоит на месте. Узкий: пока ролик проходит экран.
@@ -709,11 +932,11 @@
     const at = () => c.st.t * Math.max(0, v.duration - 0.06);
     let lastSeek = 0;
     const go = () => {
-      if (c.dead || !c.ready || v.seeking) return;
+      if (c.dead || !c.ready || v.seeking || c.mode !== 'scroll') return;
       const t = at();
       if (Math.abs(v.currentTime - t) < 0.04) return;
       const now = performance.now();
-      if (now - lastSeek < 40) { ask(); return; }
+      if (now - lastSeek < 41) { ask(); return; }
       lastSeek = now;
       v.currentTime = t;
     };
@@ -732,9 +955,21 @@
       }
       // Вернулись к выгруженному ролику: сначала встаём на нужное место, чтобы он не мигнул первым кадром.
       if (c.st.t > 0.01) v.currentTime = at();
-      // iOS Safari рисует кадры при перемотке только после первого play()
-      Promise.resolve(v.play()).then(() => { if (gen !== c.gen) return; v.pause(); c.ready = true; ask(); }, (e) => { if (gen === c.gen) blocked(c, e); });
+      // iOS Safari рисует кадры при перемотке только после первого play(). Запрет автозапуска перемотке не мешает:
+      // ролик готов и так, а play() повторим после первого касания (c.warm).
+      Promise.resolve(v.play()).then(() => { if (gen !== c.gen) return; v.pause(); c.ready = true; ask(); }, (e) => {
+        if (D) D.playErr = e && e.name;
+        if (gen !== c.gen || !e || e.name !== 'NotAllowedError') return;
+        blocked(c, e);
+        c.ready = true;
+        ask();
+      });
     });
+    c.warm = () => {
+      if (!c.on || c.dead) return;
+      const gen = c.gen;
+      Promise.resolve(v.play()).then(() => { if (gen === c.gen) v.pause(); }, () => {});
+    };
     // пока ролик не готов, постер показывает ближайшее состояние: начало или конец
     c.tween = gsap.to(c.st, {
       t: 1, ease: 'none',
@@ -780,7 +1015,7 @@
   }
 
   /* ---------- растения по бокам ---------- */
-  const deco = { l: $('.deco-l'), r: $('.deco-r'), drift: $('.drift'), current: null, wanted: null, cache: {}, loading: {}, prep: {}, timer: null, alive: 0 };
+  const deco = { l: $('.deco-l'), r: $('.deco-r'), drift: $('.drift'), current: null, wanted: null, aim: null, cache: {}, loading: {}, prep: {}, queue: [], busy: false, kick: 0, timer: null, alive: 0 };
 
   // Скрипт растения грузится, только когда посетитель подходит к главе.
   function decoLoad(id) {
@@ -796,9 +1031,36 @@
   }
 
   // Рисунок готовим заранее и по частям: посреди прокрутки на подходе к главе, а не одним куском в момент показа.
+  // Собираем по одному рисунку за раз, и первым — главы, куда идёт переход по меню, или той, что на экране:
+  // после прыжка подготовка запускалась сразу у всех пройденных глав, рисунки собирались наперегонки,
+  // и на слабом телефоне растения нужной главы появлялись через 4–8 с.
   function decoPrepare(id) {
-    if (deco.prep[id]) return deco.prep[id];
-    return (deco.prep[id] = decoLoad(id).then(() => decoBuild(id)));
+    if (!deco.prep[id]) {
+      decoLoad(id); // скрипты качаем сразу — сеть сборке не мешает
+      deco.prep[id] = new Promise((done) => deco.queue.push({ id, done }));
+    }
+    // через кадр: главы, пройденные одним прыжком, успевают встать в очередь, и нужная не ждёт остальных
+    if (!deco.busy && !deco.kick) deco.kick = requestAnimationFrame(decoNext);
+    return deco.prep[id];
+  }
+  async function decoNext() {
+    deco.kick = 0;
+    const q = deco.queue;
+    if (deco.busy || !q.length) return;
+    const job = q.find((j) => j.id === deco.aim) || q.find((j) => j.id === deco.wanted) || q[0];
+    q.splice(q.indexOf(job), 1);
+    deco.busy = true;
+    try { await decoLoad(job.id); await decoBuild(job.id); } catch (e) { console.error(e); }
+    deco.busy = false;
+    job.done();
+    if (q.length) deco.kick = requestAnimationFrame(decoNext);
+  }
+  // Переход по ссылке внутри страницы: рисунок главы, куда едем, собирается первым, пока страница прокручивается.
+  function decoAim(el) {
+    const ch = el.closest('.chapter[data-theme]');
+    if (!ch) return;
+    deco.aim = ch.dataset.theme;
+    decoPrepare(deco.aim);
   }
 
   async function decoBuild(id) {
@@ -815,7 +1077,7 @@
     };
     const L = mk(d.left, deco.l), R = mk(d.right, deco.r);
     gsap.set([L, R], { autoAlpha: 0 });
-    const tlL = await GLGrow.buildSliced(L), tlR = await GLGrow.buildSliced(R);
+    const { tl: tlL } = await GLGrow.buildSliced(L), { tl: tlR } = await GLGrow.buildSliced(R);
     const tl = gsap.timeline({ paused: true });
     tl.add(tlL.paused(false), 0).add(tlR.paused(false), 0.2);
     deco.cache[id] = { id, L, R, tl, stop: null, drift: d.drift || [] };
@@ -1097,15 +1359,19 @@
   }
 
   /* ---------- сторож частоты кадров ---------- */
-  // Считаем только кадры настоящей прокрутки. Если две порции подряд идут хуже ~30 к/с, один раз и насовсем снижаем нагрузку:
-  // без лепестков, без роста растений и названий, ролики scroll доигрывают сами. То, что уже идёт, спокойно заканчивается.
+  // Считаем только кадры настоящей прокрутки. Если в двух порциях подряд больше половины кадров хуже 20 к/с (дольше 50 мс),
+  // один раз и насовсем снижаем нагрузку. Порог по замеру (Chrome 390 с пальцем): процессор ×4 — не срабатывает ни разу,
+  // худшие порции 48 и 85 % идут поодиночке; ×6 — срабатывает на второй порции. Прежний порог (60 % кадров дольше 34 мс) на ×4 был на грани.
+  // без лепестков, без роста растений по бокам и названий глав. Появление заголовков и текста остаётся как есть, ролики тоже —
+  // кроме устройств с пальцем: там scroll-ролики переходят в once (lowerClips). То, что уже идёт, спокойно заканчивается.
   let lite = false;
   function lowerLoad() {
     if (lite) return;
     lite = true;
     root.classList.add('gl-lite');
+    if (D) D.liteAt = performance.now();
     driftStop();
-    if (lowerClips) lowerClips();
+    if (coarse && lowerClips) lowerClips();
   }
   function frameGuard() {
     if (reduce) return;
@@ -1114,9 +1380,9 @@
     const tick = (time, dt) => {
       if (document.hidden || dt > 400 || performance.now() - lastScroll > 150) return;
       n++;
-      if (dt > 34) slow++;
+      if (dt > 50) slow++;
       if (n < 40) return;
-      bad = slow > n * 0.6 ? bad + 1 : 0;
+      bad = slow > n * 0.5 ? bad + 1 : 0;
       n = slow = 0;
       if (bad >= 2) { gsap.ticker.remove(tick); lowerLoad(); }
     };
@@ -1146,7 +1412,10 @@
       }
     }
     const hashEl = location.hash.length > 1 && document.getElementById(decodeURIComponent(location.hash.slice(1)));
-    if (hashEl) scrollToEl(hashEl, true);
+    if (hashEl) {
+      if (hashEl.tagName === 'DETAILS') { hashEl.open = true; if (window.gsap) gsap.set(hashEl, { opacity: 1, y: 0, overwrite: true }); }
+      scrollToEl(hashEl, true);
+    }
   }
 
   /* ---------- место чтения при повороте и изменении окна ---------- */
@@ -1230,6 +1499,7 @@
     ScrollTrigger.refresh();
     restorePosition();
     keepPlace();
+    if (D) D.readyAt = performance.now();
     root.classList.add('gl-ready');
   };
 
