@@ -254,10 +254,11 @@
   // Меню «Смотреть всё»: разделы с тематическими кнопками.
   const sections = $('#sections');
   let lastFocus = null, hideT = 0;
-  function openSections() {
+  function openSections(from) {
     if (!sections) return;
     clearTimeout(hideT); // открыли снова, пока окно гасло: прятать его уже не нужно
-    lastFocus = document.activeElement;
+    // вернуть фокус надо на кнопку, по которой нажали: Safari не фокусирует кнопку щелчком, и activeElement там — body
+    lastFocus = from && from.nodeType === 1 ? from : document.activeElement;
     sections.hidden = false;
     root.classList.add('menu-open');
     if (lenis) lenis.stop();
@@ -274,7 +275,7 @@
     hideT = setTimeout(() => { sections.hidden = true; }, 380);
     if (restoreFocus && lastFocus) lastFocus.focus({ preventScroll: true });
   }
-  $$('[data-open-sections]').forEach((b) => b.addEventListener('click', openSections));
+  $$('[data-open-sections]').forEach((b) => b.addEventListener('click', () => openSections(b)));
   if (sections) {
     sections.addEventListener('click', (e) => { if (e.target === sections || e.target.closest('.sections-close')) closeSections(); });
     // Клавиши слушаем на документе: щелчок по панели мог увести фокус с кнопок, а Esc и Tab должны работать всё равно
@@ -536,22 +537,52 @@
 
   /* ---------- титул: «Green Life» из газона, медленно расцветает ---------- */
   const title = $('.hero-title');
-  let heroWord = null;
+  // Слово одной строкой; на узком телефоне стоймя (portrait) — две строки «Green» и «Life», вдвое крупнее.
+  // Смонтирован только тот вариант, который виден; второй монтируется, когда окно перевернули.
+  const heroEls = { one: $('.hero-word--one', title), two: $$('.hero-word--two', title) };
+  const stackMQ = matchMedia('(max-width: 700.98px) and (orientation: portrait)');
+  let heroWords = []; // смонтированные слова текущего варианта
+  let heroStacked = null; // какой вариант смонтирован последним
   let introTl = null;
   let heroLoops = null;
 
-  function heroIntro(late) {
-    heroWord = window.PlantWord ? PlantWord.mount(title, { maxPx: Math.min(290, innerHeight * 0.3), align: 'center' }) : null;
-    // Если страница грузилась долго и запасной текст уже давно виден — сразу итоговый кадр, без «перерастания».
-    if (heroWord) late ? heroWord.finish() : heroWord.play();
+  // Кегль слова задаёт CSS (--fs у .hero-title в main.css: по ширине блока, не выше доли высоты окна; на телефоне стоймя — общий для двух строк,
+  // боком — с запасом под нижнюю панель). Запасной текст и холст получают один размер, поэтому слово не прыгает, когда холст готов.
+  // Здесь читаем кегль, который браузер уже посчитал у запасного текста; по ширине холст ограничит его сам (fit в plantword.js, те же числа).
+  const cssFs = (el) => {
+    const t = $('.pw-text', el);
+    const px = t ? parseFloat(getComputedStyle(t).fontSize) : 0;
+    // браузер без min() в CSS (кегль не посчитан): по высоте окна, по ширине холст ограничит сам
+    return px > 40 ? px : Math.min(innerHeight * (innerHeight < 500 ? 0.34 : 0.4), 460);
+  };
+  function heroMount() {
+    if (!window.PlantWord) return [];
+    const stacked = stackMQ.matches;
+    heroStacked = stacked;
+    const els = stacked ? heroEls.two : [heroEls.one];
+    // кегль следует за окном при каждой перестройке слова (поворот, смена размера окна)
+    els.forEach((el) => { if (el._pw === undefined) el._pw = PlantWord.mount(el, { maxPx: () => cssFs(el), align: 'center' }); });
+    heroWords = els.map((el) => el._pw).filter(Boolean);
+    return heroWords;
+  }
+
+  function heroIntro() {
+    // Титул виден сразу (тема instant), трава и цветы прорастают с play(). «Опоздавшей» загрузки у него нет:
+    // буквы на холсте те же, что и запасной текст, — прыжка при готовности не видно.
+    heroMount().forEach((w) => w.play());
+    // Повернули телефон (или изменили окно) — монтируем слово другого варианта, если он ещё не готов; поворот всегда даёт resize
+    let hrz = 0;
+    addEventListener('resize', () => {
+      clearTimeout(hrz);
+      hrz = setTimeout(() => { if (stackMQ.matches !== heroStacked) heroMount().forEach((w) => w.play()); }, 250);
+    });
     const tl = gsap.timeline({ delay: 0.1 });
     introTl = tl;
     // Текст первого экрана не прячем (opacity) — он виден сразу, анимация только «оживляет» его.
     const subSplit = new SplitText($('.hero-sub-in'), { type: 'words,chars', aria: 'none', reduceWhiteSpace: false });
-    tl.from('.hero-eyebrow', { y: 14, duration: 0.9, ease: 'power2.out' }, 0);
     tl.fromTo(subSplit.chars, { color: GREEN, y: 6 },
-      { color: FOREST, y: 0, duration: 0.7, ease: 'power2.out', stagger: 0.014, clearProps: 'color,transform' }, 1.2);
-    tl.from(['.hero-lead', '.hero-cta .btn', '.hero-proof'], { y: 16, duration: 0.8, ease: 'power3.out', stagger: 0.08 }, 1.4);
+      { color: FOREST, y: 0, duration: 0.7, ease: 'power2.out', stagger: 0.014, clearProps: 'color,transform' }, 0.8);
+    tl.from('.hero-sub-q', { y: 10, duration: 0.9, ease: 'power2.out' }, 1.5);
     // росток-подсказка внизу
     const cue = gsap.timeline({ repeat: -1, repeatDelay: 1.2, delay: 3 });
     cue.fromTo('.sc-stem', { drawSVG: '0%' }, { drawSVG: '100%', duration: 0.9, ease: 'power1.inOut' })
@@ -578,39 +609,29 @@
     }
   }
 
+  // Прокрутка первого экрана: титул закреплён на короткий отрезок и плавно растворяется (без увеличения и без картинок поверх),
+  // акварельный фон мягко отъезжает; дальше вступление поднимается на тот же светлый фон.
   function heroScroll() {
-    const origin = () => {
-      const C = heroWord && heroWord.C;
-      if (!C) return '50% 50%';
-      const L = C.A.boxes.find((b) => b.ch === 'L') || C.A.boxes[0];
-      return `${L.x + L.w * 0.22}px ${C.baseY - C.fs * 0.38}px`;
-    };
-    const texts = ['.hero-eyebrow', '.hero-sub', '.hero-lead', '.hero-cta', '.hero-proof', '.scroll-cue'];
     const tl = gsap.timeline({
       // pinSpacer — обёртка уже есть в HTML: титул не переносится в новый блок, и браузер не перерисовывает первый экран заново.
       scrollTrigger: {
-        trigger: '.hero', start: 'top top', end: '+=70%', pin: true, pinSpacer: '.hero-spacer', scrub: 0.7, anticipatePin: 1, invalidateOnRefresh: true,
-        // Посетитель начал листать, пока шло интро, — доводим интро до конца, чтобы значения не смешались.
-        onUpdate: (s) => { if (s.progress > 0 && introTl && introTl.progress() < 1) introTl.progress(1); if (heroWord) heroWord.hold(s.progress > 0); },
+        trigger: '.hero', start: 'top top', end: '+=45%', pin: true, pinSpacer: '.hero-spacer', scrub: 0.7, anticipatePin: 1, invalidateOnRefresh: true,
+        onUpdate: (s) => {
+          // Посетитель начал листать, пока шло интро, — доводим интро до конца, чтобы значения не смешались.
+          // В самом верху progress не ровно 0 (ScrollTrigger сдвигает старт на −0,001), поэтому порог — с запасом:
+          // с порогом «> 0» слово считалось «листаемым» с первого кадра, его рост стоял, а интро проматывалось в конец.
+          if (s.progress > 0.01 && introTl && introTl.progress() < 1) introTl.progress(1);
+          // Титул растаял — в пустоту его не рисуем.
+          const gone = s.progress > 0.97;
+          heroWords.forEach((w) => w.hold(gone));
+        },
       },
     });
-    tl.fromTo(texts, { opacity: 1, y: 0 }, { opacity: 0, y: -24, duration: 0.22, stagger: 0.012, immediateRender: false }, 0.06)
-      .fromTo('.hero-float', { opacity: 0.7 }, { opacity: 0, duration: 0.2, immediateRender: false }, 0.06)
-      .fromTo(title, { scale: 1 }, { scale: () => (isNarrow() ? 16 : 11), transformOrigin: origin, duration: 1, ease: 'power3.in' }, 0)
-      .to('.hero-bg-img', { scale: 1.3, duration: 1, ease: 'none' }, 0)
-      .to('.hero-hedge', { opacity: 1, duration: 0.3, ease: 'none' }, 0.66)
-      .set([title, '.hero-bg'], { opacity: 0 }, 0.97)
-      .to({}, { duration: 0.13 }, 0.97); // короткая пауза на скамейке
-    // Скамейка не тает на месте (оставался пустой экран), а уезжает вверх вместе с титулом и растворяется —
-    // глава «Розы» поднимается прямо под ней. Начало — конец закрепления, конец — титул ушёл на полэкрана.
-    // refreshPriority −1: меряем после закрепления, иначе высота обёртки ещё без отступа закрепления.
-    // Уход — на внутреннем слое .hero-hedge-img: появление (выше) держит внешний, и при прыжке наверх скамейка не остаётся поверх титула.
-    // Масштаб от нижнего края (CSS): низ картинки не уходит за край титула, и мягкий переход в фон не обрезается.
-    gsap.timeline({
-      scrollTrigger: { trigger: '.hero-spacer', start: 'bottom bottom', end: 'bottom 50%', scrub: 0.7, invalidateOnRefresh: true, refreshPriority: -1 },
-    })
-      .fromTo('.hero-hedge-img', { opacity: 1, scale: 1 }, { opacity: 0, scale: 1.1, ease: 'power1.in', duration: 1, immediateRender: false }, 0)
-      .fromTo('.hero-hedge-fade', { opacity: 0 }, { opacity: 1, ease: 'power2.out', duration: 0.35, immediateRender: false }, 0);
+    tl.fromTo('.scroll-cue', { opacity: 1 }, { opacity: 0, duration: 0.15, immediateRender: false }, 0)
+      .fromTo('.hero-float', { opacity: 0.7 }, { opacity: 0, duration: 0.5, immediateRender: false }, 0.1)
+      .fromTo('.hero-sub', { opacity: 1, y: 0 }, { opacity: 0, y: -16, duration: 0.5, ease: 'power1.in', immediateRender: false }, 0.12)
+      .fromTo(title, { opacity: 1, y: 0, scale: 1 }, { opacity: 0, y: -28, scale: 1.05, duration: 0.7, ease: 'power1.inOut', immediateRender: false }, 0.2)
+      .fromTo('.hero-bg-img', { scale: 1, opacity: 0.96 }, { scale: 1.12, opacity: 0.5, duration: 1, ease: 'none', immediateRender: false }, 0);
   }
 
   /* ---------- текст «из зелени» ---------- */
@@ -1008,7 +1029,7 @@
     // пришли в главу из меню — название вырастает заново, на глазах
     window.addEventListener('gl:arrive', (e) => { const w = words[e.detail]; if (w) w.replay(); });
     window.addEventListener('gl:replay-visible', () => {
-      if (heroWord && title.getBoundingClientRect().bottom > innerHeight * 0.3) { heroWord.replay(); return; }
+      if (heroWords.length && title.getBoundingClientRect().bottom > innerHeight * 0.3) { heroWords.forEach((w) => w.replay()); return; }
       const id = Object.keys(words).find((k) => { const r = words[k].el.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight; });
       if (id) words[id].replay();
     });
@@ -1460,11 +1481,10 @@
   let started = false;
   const start = async () => {
     started = true;
-    const late = performance.now() > 1800 || !root.classList.contains('fx');
     heroLoops = loops('.hero-spacer');
     try {
-      if (!reduce) { heroIntro(late); heroFloat(); heroScroll(); }
-      else if (window.PlantWord) { heroWord = PlantWord.mount(title, { maxPx: Math.min(290, innerHeight * 0.3), align: 'center' }); }
+      if (!reduce) { heroIntro(); heroFloat(); heroScroll(); }
+      else heroMount();
     } catch (e) { bail(e); }
     const tasks = [
       () => { if (!reduce) $$('[data-leaf-title]').forEach(leafTitle); reveals(); },

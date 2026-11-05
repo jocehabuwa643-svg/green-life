@@ -460,7 +460,8 @@
 
   const themes = {
     meadow: { // титул «Green Life»: виден сразу, потом прорастает пушистая трава и распускаются полевые цветы
-      tex: 'img/tex-izgorod.webp', outline: 'rgba(31,61,41,.4)', shadow: 'rgba(31,61,41,.35)', padTop: 0.36, padBottom: 0.2,
+      // texS — уменьшенная текстура для телефона: её же берёт запасной текст из CSS, браузер качает один файл. padX — поле под траву у крайних букв
+      tex: 'img/tex-hedge.webp', texS: 'img/tex-hedge-s.webp', outline: 'rgba(31,61,41,.4)', shadow: 'rgba(31,61,41,.35)', padTop: 0.36, padBottom: 0.2, padX: 0.1,
       revealDur: 0, instant: true,
       build(C) {
         const { A, fs, rand } = C;
@@ -924,7 +925,8 @@
     const theme = themes[themeName];
     if (!theme || !word) return null;
     const align = opts.align || el.dataset.align || 'left';
-    const maxPx = opts.maxPx || parseFloat(el.dataset.max) || 220;
+    const maxOpt = opts.maxPx || parseFloat(el.dataset.max) || 220;
+    const maxPx = () => (typeof maxOpt === 'function' ? maxOpt() : maxOpt); // функция — кегль подстраивается под окно при каждой перестройке (титул)
     const seed = [...word].reduce((s, ch) => s + ch.charCodeAt(0) * 7, 13);
     const canvas = document.createElement('canvas');
     canvas.setAttribute('aria-hidden', 'true');
@@ -938,10 +940,11 @@
     async function setup() {
       const font = `700 100px Oswald`;
       try { await document.fonts.load(font, word); } catch (e) { /* шрифт подставится системный */ }
-      if (theme.tex) img = await loadImg(theme.tex);
+      const texSrc = theme.texS && matchMedia('(max-width: 700.98px)').matches ? theme.texS : theme.tex;
+      if (texSrc) img = await loadImg(texSrc);
       const W = el.clientWidth;
       if (!W) return false;
-      const { fs, f, padX, padTopPx, baseY, tw, H } = fit(word, theme, W, maxPx);
+      const { fs, f, padX, padTopPx, baseY, tw, H } = fit(word, theme, W, maxPx());
       const x0 = align === 'center' ? (W - tw) / 2 : Math.max(fs * 0.02, padX * fs);
       const dpr = DPR();
       canvas.width = Math.round(W * dpr);
@@ -976,8 +979,10 @@
       b.textBaseline = 'alphabetic';
       if (theme.tex && img) {
         const p = b.createPattern(img, 'repeat');
-        const s = Math.max(tw / img.width, (fs * 1.1) / img.height);
-        p.setTransform(new DOMMatrix().translateSelf(x0, padTopPx).scaleSelf(s, s));
+        // Картинка лежит по центру слова, верхним краем на верхней линии букв; по ширине растянута на слово, а у узкого слова — по высоте строки.
+        // Так её ставит и запасной текст в CSS (.hero-word .pw-text), поэтому при готовности холста заливка букв не меняется.
+        const s = Math.max(tw / img.width, (fs * 0.92) / img.height);
+        p.setTransform(new DOMMatrix().translateSelf(W / 2 - (img.width * s) / 2, padTopPx).scaleSelf(s, s));
         b.fillStyle = p;
       } else if (theme.wood) {
         wood = wood || woodCanvas(rng(seed + 5));

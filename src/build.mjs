@@ -115,28 +115,42 @@ const waMain = wa('Здравствуйте! Пришлите, пожалуйс�
 
 // ——— разделы ———
 
+// Первый экран: только «Green Life» крупно и подзаголовок. Слово — одной строкой; на узком телефоне стоймя (portrait ≤ 700 px) —
+// две строки «Green» и «Life» (main.js монтирует только видимый вариант). Всё, что стояло здесь раньше (чем занимаемся, где,
+// кнопки, телефон), — во вступлении ниже (intro).
 const hero = () => `
 <div class="hero-spacer">
 <section class="hero" id="top" aria-labelledby="hero-h1">
   <div class="hero-bg" aria-hidden="true"><img class="hero-bg-img" src="img/bg-akvarel.webp" srcset="img/bg-akvarel-900.webp 900w, img/bg-akvarel.webp 2000w" sizes="100vw" width="2000" height="1143" alt="" fetchpriority="high" decoding="async"></div>
-  <div class="hero-hedge" aria-hidden="true"><div class="hero-hedge-img"><i class="hero-hedge-fade"></i></div></div>
   <div class="hero-inner wrap">
-    <p class="eyebrow hero-eyebrow">${nbsp('Питомник растений и ландшафтные работы')}<span class="hero-where"><span aria-hidden="true"> · </span>${nbsp(`${company.city} и область`)}</span></p>
-    <div class="hero-title pw" data-theme="meadow" data-word="Green Life" data-align="center" aria-hidden="true"><span class="pw-text">Green Life</span></div>
-    <h1 class="hero-sub" id="hero-h1"><span class="sr-only">Green Life — </span>${splitText('Саженцы для Сибири и озеленение участков в Новосибирске', 'hero-sub-in')}</h1>
-    <p class="hero-lead">${nbsp('Розы, туи, сирень, яблони и ягодные — с гарантией приживаемости. Газон, плитка и подсветка дома под ключ. Отправляем по всей России, а перед отправкой присылаем фото и видео заказа.')}</p>
-    <div class="hero-cta">
-      <a class="btn btn-lime" href="${waMain}" target="_blank" rel="noopener">${waIcon}Получить прайс в WhatsApp</a>
-      <button class="btn btn-ghost btn-all" type="button" data-open-sections aria-haspopup="dialog" aria-controls="sections">${leafIcon}Смотреть всё</button>
+    <div class="hero-title" aria-hidden="true">
+      <div class="pw hero-word hero-word--one" data-theme="meadow" data-word="Green Life" data-align="center"><span class="pw-text">Green Life</span></div>
+      <div class="pw hero-word hero-word--two" data-theme="meadow" data-word="Green" data-align="center"><span class="pw-text">Green</span></div>
+      <div class="pw hero-word hero-word--two" data-theme="meadow" data-word="Life" data-align="center"><span class="pw-text">Life</span></div>
     </div>
-    <p class="hero-proof"><a href="tel:${company.phoneHref}">${phoneIcon}${esc(company.phone)}</a></p>
+    <h1 class="hero-sub" id="hero-h1"><span class="sr-only">Green Life — </span><span class="hero-sub-main">${splitText('Благоустройство и озеленение', 'hero-sub-in')}</span><span class="hero-sub-q">высшего качества</span></h1>
   </div>
-  <a class="scroll-cue" href="#rozy">
+  <a class="scroll-cue" href="#intro">
     <svg viewBox="0 0 40 64" aria-hidden="true"><path class="sc-stem" d="M20 62C20 46 20 34 20 22" /><path class="sc-leaf sc-l" d="M20 40c-8-1-12-6-13-12 7 0 12 4 13 12Z"/><path class="sc-leaf sc-r" d="M20 32c8-1 12-6 13-12-7 0-12 4-13 12Z"/><circle class="sc-bud" cx="20" cy="18" r="4"/></svg>
     <span>Листайте</span>
   </a>
 </section>
 </div>`;
+
+// Вступление под титулом: что мы делаем, где, кнопки и телефон.
+const intro = () => `
+<section class="intro" id="intro" aria-labelledby="intro-title">
+  <div class="wrap intro-in">
+    <p class="eyebrow intro-eyebrow" data-reveal>${nbsp('Питомник растений и ландшафтные работы')}<span class="intro-where"><span aria-hidden="true"> · </span>${nbsp(`${company.city} и область`)}</span></p>
+    <h2 class="sec-title sec-title--sm" id="intro-title" data-leaf-title>${hl('Саженцы для Сибири и озеленение участков *под ключ*')}</h2>
+    <p class="intro-lead" data-reveal>${nbsp('Розы, туи, сирень, яблони и ягодные — с гарантией приживаемости. Газон, плитка и подсветка дома под ключ. Отправляем по всей России, а перед отправкой присылаем фото и видео заказа.')}</p>
+    <div class="intro-cta" data-reveal>
+      <a class="btn btn-lime" href="${waMain}" target="_blank" rel="noopener">${waIcon}Получить прайс в WhatsApp</a>
+      <button class="btn btn-ghost btn-all" type="button" data-open-sections aria-haspopup="dialog" aria-controls="sections">${leafIcon}Смотреть всё</button>
+    </div>
+    <p class="intro-proof" data-reveal><a href="tel:${company.phoneHref}">${phoneIcon}${esc(company.phone)}</a></p>
+  </div>
+</section>`;
 
 const promoBlock = () => {
   const list = promos.filter((p) => p.until >= today);
@@ -731,7 +745,7 @@ const jsonLd = {
   '@graph': [
     {
       '@type': ['GardenStore', 'HomeAndConstructionBusiness'], ...(SITE ? { '@id': `${abs('')}#org`, url: abs('') } : {}),
-      name: 'Green Life', alternateName: 'Грин Лайф', description, telephone: company.phoneHref, image: abs('img/og.jpg'),
+      name: 'Green Life', alternateName: 'Грин Лайф', description, telephone: company.phoneHref, image: abs('img/og-hero.jpg'),
       currenciesAccepted: 'RUB',
       address: { '@type': 'PostalAddress', addressLocality: company.city, addressRegion: 'Новосибирская область', addressCountry: 'RU' },
       areaServed: [{ '@type': 'City', name: 'Новосибирск' }, { '@type': 'Country', name: 'Россия' }],
@@ -773,13 +787,14 @@ ${SITE ? `<link rel="canonical" href="${abs('')}">\n<meta property="og:url" cont
 <meta property="og:locale" content="ru_RU">
 <meta property="og:title" content="Green Life — саженцы и озеленение участков в Новосибирске">
 <meta property="og:description" content="Сибирские сорта с гарантией приживаемости, газон, плитка и подсветка дома под ключ. Отправка по России.">
-<meta property="og:image" content="${abs('img/og.jpg')}">
+<meta property="og:image" content="${abs('img/og-hero.jpg')}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preload" href="fonts/oswald-cyrillic-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/oswald-latin-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/montserrat-cyrillic-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/montserrat-cyrillic-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/main.css?v=${V}">
@@ -796,6 +811,7 @@ ${header()}
 <div class="drift" aria-hidden="true"></div>
 <main>
 ${hero()}
+${intro()}
 ${lightChapters.map(chapter).join('\n')}
 ${whyUs()}
 ${howWeWork()}
