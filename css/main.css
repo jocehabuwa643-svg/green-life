@@ -288,8 +288,9 @@ html:not(.js) [data-sound], html:not(.js) [data-open-sections] { display: none; 
   font: 700 var(--fs)/1 var(--font-display); letter-spacing: 0;
   color: var(--deep); -webkit-text-fill-color: transparent;
   /* Заливка букв — середина фото живой изгороди без лавочки и без тёмных краёв (img/tex-hedge*.webp; собирает research/tex/make-hedge.py).
-     Лежит так же, как на холсте: по центру слова, верх — на верхней линии букв, ширина — по слову. */
-  background: var(--deep) url(../img/tex-hedge.webp) 50% calc(var(--fs) * .36) / calc(var(--fs) * 4.166) auto repeat-x; -webkit-background-clip: text; background-clip: text;
+     Лежит так же, как на холсте: по центру слова, верх — на верхней линии букв, ширина — по слову.
+     Пока картинка не пришла (медленная сеть), буквы залиты её средним цветом (#2c732e), а не тёмным: при появлении текстуры нет резкого скачка яркости. */
+  background: #2c732e url(../img/tex-hedge.webp) 50% calc(var(--fs) * .36) / calc(var(--fs) * 4.166) auto repeat-x; -webkit-background-clip: text; background-clip: text;
 }
 /* «живые» названия: холст поверх запасного текста */
 .pw { position: relative; }
@@ -305,11 +306,13 @@ html:not(.js) [data-sound], html:not(.js) [data-open-sections] { display: none; 
 /* ---- вступление под титулом ---- */
 /* Титул закрепляется на 45 % высоты окна (main.js, heroScroll: end '+=45%'), вступление поднимается снизу, пока он растворяется.
    Место под закрепление и подъём вступления заданы здесь заранее, а не появляются вместе со скриптом: страница не сдвигается, когда ScrollTrigger готов.
-   Без скриптов и при «уменьшить движение» закрепления нет — вступление идёт сразу под титулом, поэтому отступы только для режима с анимацией. */
+   Без скриптов и при «уменьшить движение» закрепления нет — вступление идёт сразу под титулом, поэтому отступы только для режима с анимацией.
+   .hero-pin ставит heroScroll() в main.js, когда закрепление создано: если запасной таймер в <head> или сбой сняли .fx (страница готовилась дольше 12 с),
+   отступы остаются, пока закрепление есть, и между титулом и вступлением не появляется пустого места. */
 .intro { position: relative; z-index: 1; padding: clamp(28px, 6vh, 72px) 0 calc(var(--sec-y) * .45); text-align: center; }
 @media (prefers-reduced-motion: no-preference) {
-  .fx .hero-spacer { padding-bottom: calc(var(--vh) * 45); }
-  .fx .intro { margin-top: calc(var(--vh) * -34); }
+  .fx .hero-spacer, .hero-pin .hero-spacer { padding-bottom: calc(var(--vh) * 45); }
+  .fx .intro, .hero-pin .intro { margin-top: calc(var(--vh) * -34); }
 }
 .intro-in { display: grid; justify-items: center; }
 .intro-eyebrow { display: block; color: var(--deep); }
