@@ -1,6 +1,9 @@
 /* Green Life — сценарий страницы: плавный скролл, рост растений, появление текста «из зелени». */
 (() => {
   const root = document.documentElement;
+  // Метка версии из адреса самого скрипта (main.js?v=…): декорации js/deco/*.js берём с той же меткой, иначе после обновления
+  // браузер мог бы взять их из кэша (Pages держит файлы 10 минут) и смешать старые рисунки с новым сценарием.
+  const assetV = ((document.currentScript && /[?&]v=([A-Za-z0-9_-]+)/.exec(document.currentScript.src)) || [])[1] || '';
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   // основное указание — палец: телефоны, планшеты, iPhone. Прокрутка там родная, ролики без перемотки кадрами.
   const coarse = matchMedia('(pointer: coarse)').matches;
@@ -1046,7 +1049,7 @@
     if (deco.loading[id]) return deco.loading[id];
     return (deco.loading[id] = new Promise((resolve) => {
       const s = document.createElement('script');
-      s.src = `js/deco/${id}.js`;
+      s.src = `js/deco/${id}.js${assetV ? `?v=${assetV}` : ''}`;
       s.async = true;
       s.onload = s.onerror = () => resolve();
       document.head.appendChild(s);

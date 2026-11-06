@@ -790,7 +790,11 @@ ${SITE ? `<link rel="canonical" href="${abs('')}">\n<meta property="og:url" cont
 <meta property="og:image" content="${abs('img/og-hero.jpg')}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Крупная надпись Green Life из живой изгороди с травой и цветами и подпись «Благоустройство и озеленение высшего качества»">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Green Life — саженцы и озеленение участков в Новосибирске">
+<meta name="twitter:description" content="Сибирские сорта с гарантией приживаемости, газон, плитка и подсветка дома под ключ. Отправка по России.">
+<meta name="twitter:image" content="${abs('img/og-hero.jpg')}">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preload" href="fonts/oswald-cyrillic-500.woff2" as="font" type="font/woff2" crossorigin>
