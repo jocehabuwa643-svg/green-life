@@ -330,7 +330,8 @@ html:not(.js) [data-sound], html:not(.js) [data-open-sections] { display: none; 
 .fx .ib-line { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .fx .ib-line { opacity: 1; } }
 .intro .intro-lead { margin-top: clamp(18px, 3vh, 34px); }
-.intro-lead { max-width: 58ch; margin: 22px auto 30px; font: 400 clamp(16px, 1.3vw, 18.5px)/1.65 var(--font-text); color: var(--text); text-wrap: pretty; }
+.intro-lead { max-width: min(92vw, 1100px); margin: 22px auto 34px; font: 500 clamp(18px, 2vw, 32px)/1.5 var(--font-text); color: var(--text); text-wrap: balance; }
+.intro-lead strong { display: block; margin-bottom: .35em; font: 700 clamp(26px, 3.6vw, 60px)/1.1 var(--font-display); text-transform: uppercase; letter-spacing: .02em; color: var(--mid); }
 .intro-cta { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
 .intro-proof { margin: 22px 0 0; display: flex; justify-content: center; }
 .intro-proof a { display: inline-flex; align-items: center; gap: 7px; font: 500 18px/1 var(--font-display); letter-spacing: .04em; color: var(--forest); text-decoration: none; }
@@ -1172,7 +1173,6 @@ html.menu-open.on-dark { background: #090d09; }
   .hero-sub-main::before, .hero-sub-main::after { display: none; }
   .hero-sub-q { font-size: clamp(19px, 5.6vw, 26px); }
   .intro-cta .btn { width: min(100%, 340px); }
-  .intro-lead { font-size: 15.5px; }
   .hero-word .pw-text { background-image: url(../img/tex-hedge-s.webp); }
   .promo-card { padding: 24px 20px; min-height: 0; }
   /* на узкой карточке гирлянда шире, а надпись «Сезон…» опускаем под неё */
