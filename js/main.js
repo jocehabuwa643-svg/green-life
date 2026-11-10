@@ -670,6 +670,14 @@
     });
   }
 
+  // Заставка во вступлении: строки выходят по очереди, как титры в кино — широкая разрядка и прозрачность, потом плотно встают на место.
+  function introBig() {
+    const lines = [...document.querySelectorAll('.ib-line')];
+    if (!lines.length) return;
+    gsap.fromTo(lines, { opacity: 0, letterSpacing: '0.22em', y: 28 }, { opacity: 1, letterSpacing: '0.01em', y: 0, duration: 1.1, ease: 'power3.out', stagger: 0.22, clearProps: 'letterSpacing,transform',
+      scrollTrigger: { trigger: '.intro-big', start: 'top 85%', once: true } });
+  }
+
   function reveals() {
     // Всё, что вошло в экран за один раз, появляется пакетом. Уже проскоченное (прыжок End, ползунок, поиск)
     // показываем сразу, без очереди.
@@ -1492,7 +1500,7 @@
       else heroMount();
     } catch (e) { bail(e); }
     const tasks = [
-      () => { if (!reduce) $$('[data-leaf-title]').forEach(leafTitle); reveals(); },
+      () => { if (!reduce) $$('[data-leaf-title]').forEach(leafTitle); introBig(); reveals(); },
       headerTriggers, manifest, chapterWords, chapters, scenes, blooms, decoTriggers, lights, servicesStrip,
       () => { stepsStem(); faqRefresh(); },
     ];

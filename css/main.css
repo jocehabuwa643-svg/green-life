@@ -321,7 +321,15 @@ html:not(.js) [data-sound], html:not(.js) [data-open-sections] { display: none; 
 .intro-in { display: grid; justify-items: center; }
 .intro-eyebrow { display: block; color: var(--deep); }
 .intro-eyebrow::before { display: none; }
-.intro .sec-title { margin: 14px auto 0; max-width: 21ch; }
+/* Заставка «как титры в кино»: четыре строки крупным Oswald на всю ширину окна. 8,45 — ширина самой длинной строки («БЛАГОУСТРОЙСТВО») в кеглях;
+   по высоте — не больше того, что помещается в окно вместе с надзаголовком. Появляются построчно (main.js introBig). */
+.intro-big { --hw: min(100vw, 1960px); width: var(--hw); justify-self: start; margin: 6px 0 0 calc((100% - var(--hw)) / 2); padding-inline: 3.5vw; box-sizing: border-box;
+  font: 700 min(calc((var(--hw) - 7vw) / 8.45), calc((var(--vh) * 100 - 190px) / 4)) / .96 var(--font-display); text-transform: uppercase; letter-spacing: .01em; text-align: center; color: var(--forest); }
+.ib-line { display: block; }
+.ib-accent { color: var(--leaf); }
+.fx .ib-line { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .fx .ib-line { opacity: 1; } }
+.intro .intro-lead { margin-top: clamp(18px, 3vh, 34px); }
 .intro-lead { max-width: 58ch; margin: 22px auto 30px; font: 400 clamp(16px, 1.3vw, 18.5px)/1.65 var(--font-text); color: var(--text); text-wrap: pretty; }
 .intro-cta { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
 .intro-proof { margin: 22px 0 0; display: flex; justify-content: center; }

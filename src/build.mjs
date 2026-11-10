@@ -142,7 +142,7 @@ const intro = () => `
 <section class="intro" id="intro" aria-labelledby="intro-title">
   <div class="wrap intro-in">
     <p class="eyebrow intro-eyebrow" data-reveal>${nbsp('Питомник растений и ландшафтные работы')}<span class="intro-where"><span aria-hidden="true"> · </span>${nbsp(`${company.city} и область`)}</span></p>
-    <h2 class="sec-title sec-title--sm" id="intro-title" data-leaf-title>${hl('Саженцы для Сибири и озеленение участков *под ключ*')}</h2>
+    <h2 class="intro-big" id="intro-title"><span class="ib-line">Качественное</span> <span class="ib-line">благоустройство</span> <span class="ib-line">и озеленение</span> <span class="ib-line ib-accent">в Новосибирске</span></h2>
     <p class="intro-lead" data-reveal>${nbsp('Розы, туи, сирень, яблони и ягодные — с гарантией приживаемости. Газон, плитка и подсветка дома под ключ. Отправляем по всей России, а перед отправкой присылаем фото и видео заказа.')}</p>
     <div class="intro-cta" data-reveal>
       <a class="btn btn-lime" href="${waMain}" target="_blank" rel="noopener">${waIcon}Получить прайс в WhatsApp</a>
