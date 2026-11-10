@@ -273,11 +273,13 @@ html:not(.js) [data-sound], html:not(.js) [data-open-sections] { display: none; 
   --hw: min(100vw, 1960px);
   /* Кегль слова считаем здесь, а не в скрипте: запасной текст (до готовности холста и без скриптов) и холст получают один размер и одно место,
      слово не прыгает, когда холст готов. Слово занимает 0,97 ширины блока за вычетом поля под траву (0,1 кегля с каждой стороны, padX в plantword.js);
-     4,166 — ширина «Green Life» в Oswald Bold при кегле 1 (так её меряет холст). Выше 40 % высоты окна и 460 px не растёт. */
+     4,166 — ширина «Green Life» в Oswald Bold при кегле 1 (так её меряет холст). Выше 40 % высоты окна (на окнах от 701×600 — 44 %) и 460 px не растёт. */
   --fs: min(calc(var(--hw) * .97 / (4.166 + .2)), calc(var(--vh) * 40), 460px);
   position: relative; width: var(--hw); margin: 0 0 .12em calc((100% - var(--hw)) / 2); will-change: transform, opacity;
 }
 /* низкое окно (телефон боком, 844×390): слову остаётся место под шапкой и подзаголовком — не выше 34 % высоты */
+/* окно ноутбука (1366×625, 1536×730, 1920×950 с панелями браузера): слово упиралось в 40 % высоты и занимало 77–83 % ширины — потолок 44 % */
+@media (min-width: 701px) and (min-height: 600px) { .hero-title { --fs: min(calc(var(--hw) * .97 / (4.166 + .2)), calc(var(--vh) * 44), 460px); } }
 @media (max-height: 499.98px) { .hero-title { --fs: min(calc(var(--hw) * .97 / (4.166 + .2)), calc(var(--vh) * 34), 460px); } }
 /* Высота блока слова — 1,404 кегля (поля над буквами 0,36, сами буквы ≈ 0,84, поле под ними 0,2): её задаёт CSS и до, и после готовности холста.
    Холст по высоте разнится на ±2 px (plantword.js округляет границы букв до целого), но блок от этого не меняется — подзаголовок под ним не сдвигается. */
@@ -314,7 +316,7 @@ html:not(.js) [data-sound], html:not(.js) [data-open-sections] { display: none; 
 .intro { position: relative; z-index: 1; padding: clamp(28px, 6vh, 72px) 0 calc(var(--sec-y) * .45); text-align: center; }
 @media (prefers-reduced-motion: no-preference) {
   .fx .hero-spacer, .hero-pin .hero-spacer { padding-bottom: calc(var(--vh) * 45); }
-  .fx .intro, .hero-pin .intro { margin-top: calc(var(--vh) * -34); }
+  .fx .intro, .hero-pin .intro { margin-top: calc(var(--vh) * -42); }
 }
 .intro-in { display: grid; justify-items: center; }
 .intro-eyebrow { display: block; color: var(--deep); }
@@ -1015,7 +1017,9 @@ html.menu-open.on-dark { background: #090d09; }
     -webkit-mask-image: linear-gradient(var(--deco-dir), #000 calc(100% - 12px), transparent);
             mask-image: linear-gradient(var(--deco-dir), #000 calc(100% - 12px), transparent);
   }
-  :root .deco > svg { width: calc(var(--deco-b) * 2.4); }
+  /* overflow: hidden — виден только край у поля страницы, остальное и так срезает маска .deco. Без него в Chrome на Windows с видеокартой Intel
+     растеризация этого слоя (will-change: transform) зависала: кадры страницы вставали на 9–40 с (нашли в эмуляции телефона, окно ≤ 900 px) */
+  :root .deco > svg { width: calc(var(--deco-b) * 2.4); overflow: hidden; }
   /* огоньки гирлянд на тёмном фоне заметны и в растворе — полосу «Подсветки» сужаем, рисунок тот же */
   :root.deco-front .deco { width: calc(var(--deco-b) - 6px); }
   :root .deco-r > svg { left: auto; }
@@ -1281,6 +1285,17 @@ html.menu-open.on-dark { background: #090d09; }
   .scroll-cue { display: none; }
   .hero-inner { padding-bottom: 28px; }
 }
+/* подзаголовок первого экрана крупнее: на 1440 — 37 и 43 px (было 30 и 35), на 1920 — 40 и 46 (потолок: шире строка не помещается в .wrap), на 390 — 19 и 25.
+   Только при высоте окна от 600 px: ниже остаётся прежний расчёт, под который подогнан кегль слова. */
+@media (min-height: 600px) {
+  .hero-sub-main { font-size: clamp(15px, 2.6vw, 40px); }
+  .hero-sub-q { font-size: clamp(21px, 3vw, 46px); }
+}
+@media (min-height: 600px) and (max-width: 700.98px) {
+  .hero-sub-main { font-size: clamp(14px, 4.9vw, 21px); }
+  .hero-sub-q { font-size: clamp(20px, 6.3vw, 28px); }
+}
+
 /* телефон боком шире 700 px (740×360, 800×360, 844×390): панели «Позвонить / MAX / WhatsApp» там нет, нижний отступ ужимаем — hero не выше окна */
 @media (min-width: 701px) and (max-height: 500px) {
   .hero-inner { padding-bottom: 28px; }
