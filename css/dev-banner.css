@@ -1,39 +1,65 @@
-.dev-banner{position:relative;isolation:isolate;overflow:hidden;margin:0;padding:clamp(40px,6vw,72px) clamp(16px,4vw,40px) clamp(44px,6vw,80px);color:#f1f7ea;font-family:Montserrat,"Segoe UI",system-ui,sans-serif;background:linear-gradient(180deg,rgba(6,18,10,0) 0,rgba(6,18,10,.5) 45%,rgba(6,18,10,.85) 100%)}
-.dev-bg{position:absolute;inset:0;z-index:-1;pointer-events:none;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 38%);mask-image:linear-gradient(180deg,transparent 0,#000 38%)}
-.dev-glow{position:absolute;display:block;border-radius:50%;filter:blur(60px);will-change:transform}
-.dev-glow--a{left:-8%;bottom:-55%;width:min(56vw,640px);height:300px;background:radial-gradient(closest-side,rgba(139,191,51,.5),rgba(139,191,51,0));animation:dbDriftA 17s ease-in-out infinite alternate}
-.dev-glow--b{right:-6%;bottom:-62%;width:min(52vw,600px);height:300px;background:radial-gradient(closest-side,rgba(110,92,255,.55),rgba(63,140,255,0));animation:dbDriftB 21s ease-in-out infinite alternate}
-.dev-dots{position:absolute;inset:0;display:block}
-.dev-dots b{position:absolute;bottom:-10px;width:4px;height:4px;border-radius:50%;background:rgba(201,231,168,.75);opacity:0;animation:dbRise 11s linear infinite}
-.dev-dots b:nth-child(1){left:8%;animation-delay:0s;animation-duration:12s}
-.dev-dots b:nth-child(2){left:19%;width:3px;height:3px;animation-delay:3s;animation-duration:10s}
-.dev-dots b:nth-child(3){left:33%;animation-delay:6s;animation-duration:13s;background:rgba(150,170,255,.8)}
-.dev-dots b:nth-child(4){left:52%;width:3px;height:3px;animation-delay:1.5s;animation-duration:11s}
-.dev-dots b:nth-child(5){left:67%;animation-delay:4.5s;animation-duration:14s;background:rgba(150,170,255,.8)}
-.dev-dots b:nth-child(6){left:81%;width:5px;height:5px;animation-delay:7s;animation-duration:12s}
-.dev-dots b:nth-child(7){left:92%;width:3px;height:3px;animation-delay:2s;animation-duration:10s}
-.dev-in{width:min(100%,1000px);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:22px 40px}
-.dev-copy{min-width:0;flex:1}
-.dev-kicker{margin:0 0 10px;font:500 11.5px/1.2 Oswald,"Arial Narrow",sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#c9e7a8}
-.dev-slogans{display:grid;margin:0;font:600 clamp(18px,2.4vw,26px)/1.28 Montserrat,"Segoe UI",system-ui,sans-serif;letter-spacing:-.01em}
-.dev-slogans span{grid-area:1/1;opacity:0;background:linear-gradient(90deg,#f1f7ea 30%,#c9e7a8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:dbSlogan 15s ease-in-out infinite}
-.dev-slogans span:nth-child(2){animation-delay:5s}
-.dev-slogans span:nth-child(3){animation-delay:10s}
-.dev-btn{position:relative;isolation:isolate;flex:none;display:inline-flex;align-items:center;gap:12px;padding:8px 24px 8px 8px;border-radius:999px;text-decoration:none;color:#fff;background:linear-gradient(110deg,transparent 40%,rgba(255,255,255,.38) 50%,transparent 60%) 220% 0/260% 100% no-repeat,linear-gradient(135deg,#4f8dff 0%,#7a5cff 55%,#9b4dff 100%);box-shadow:0 12px 32px -12px rgba(122,92,255,.85),inset 0 1px 0 rgba(255,255,255,.32);animation:dbShine 6s ease-in-out infinite;transition:transform .35s cubic-bezier(.22,1,.36,1),filter .3s}
-.dev-btn::after{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;box-shadow:0 0 0 0 rgba(122,92,255,0);animation:dbRing 6s ease-out infinite}
-.dev-btn:hover{transform:translateY(-2px);filter:brightness(1.07)}
-.dev-btn:focus-visible{outline:2px solid #c9e7a8;outline-offset:4px}
-.dev-btn-logo{width:38px;height:38px;display:grid;place-items:center;flex:none}
-.dev-btn-logo svg{width:38px;height:38px;display:block}
-.dev-btn-text{font:700 15px/1 Oswald,"Arial Narrow",sans-serif;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap}
-.dev-tap{position:absolute;right:30px;bottom:-16px;width:26px;height:26px;pointer-events:none;opacity:0;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45));animation:dbTap 6s ease-in-out infinite}
-.dev-tap svg{width:26px;height:26px;display:block}
+#dev-banner{position:relative;isolation:isolate;overflow:hidden;margin:0;padding:clamp(40px,6vw,72px) clamp(16px,4vw,40px) clamp(44px,6vw,80px);color:#f1f7ea;font-family:Montserrat,"Segoe UI",system-ui,sans-serif;background:linear-gradient(180deg,rgba(6,18,10,0) 0,rgba(6,18,10,.5) 45%,rgba(6,18,10,.85) 100%);box-sizing:border-box}
+#dev-banner *,#dev-banner *::before,#dev-banner *::after{box-sizing:border-box}
+#dev-banner .dev-bg{position:absolute;inset:0;z-index:-1;pointer-events:none;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 38%);mask-image:linear-gradient(180deg,transparent 0,#000 38%)}
+#dev-banner .dev-glow{position:absolute;display:block;border-radius:50%;filter:blur(60px);will-change:transform}
+#dev-banner .dev-glow--a{left:-8%;bottom:-55%;width:min(56vw,640px);height:300px;background:radial-gradient(closest-side,rgba(139,191,51,.5),rgba(139,191,51,0));animation:dbDriftA 17s ease-in-out infinite alternate}
+#dev-banner .dev-glow--b{right:-6%;bottom:-62%;width:min(52vw,600px);height:300px;background:radial-gradient(closest-side,rgba(110,92,255,.55),rgba(63,140,255,0));animation:dbDriftB 21s ease-in-out infinite alternate}
+#dev-banner .dev-dots{position:absolute;inset:0;display:block}
+#dev-banner .dev-dots b{position:absolute;bottom:-10px;width:4px;height:4px;border-radius:50%;background:rgba(201,231,168,.75);opacity:0;animation:dbRise 11s linear infinite}
+#dev-banner .dev-dots b:nth-child(1){left:8%;animation-delay:0s;animation-duration:12s}
+#dev-banner .dev-dots b:nth-child(2){left:19%;width:3px;height:3px;animation-delay:3s;animation-duration:10s}
+#dev-banner .dev-dots b:nth-child(3){left:33%;animation-delay:6s;animation-duration:13s;background:rgba(150,170,255,.8)}
+#dev-banner .dev-dots b:nth-child(4){left:52%;width:3px;height:3px;animation-delay:1.5s;animation-duration:11s}
+#dev-banner .dev-dots b:nth-child(5){left:67%;animation-delay:4.5s;animation-duration:14s;background:rgba(150,170,255,.8)}
+#dev-banner .dev-dots b:nth-child(6){left:81%;width:5px;height:5px;animation-delay:7s;animation-duration:12s}
+#dev-banner .dev-dots b:nth-child(7){left:92%;width:3px;height:3px;animation-delay:2s;animation-duration:10s}
+#dev-banner .dev-in{width:min(100%,1000px);margin:0 auto;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:22px 40px}
+#dev-banner .dev-copy{min-width:0;flex:1}
+#dev-banner .dev-kicker{margin:0 0 10px;padding:0;font:500 11.5px/1.3 Oswald,"Arial Narrow",sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#c9e7a8;opacity:1}
+#dev-banner .dev-slogans{display:grid;margin:0;padding:0;font:600 clamp(18px,2.4vw,26px)/1.28 Montserrat,"Segoe UI",system-ui,sans-serif;letter-spacing:-.01em;opacity:1}
+#dev-banner .dev-slogans span{grid-area:1/1;display:block;opacity:0;color:#f1f7ea;-webkit-text-fill-color:#f1f7ea;background:none;text-shadow:0 2px 18px rgba(0,0,0,.55);animation:dbSlogan 15s ease-in-out infinite}
+#dev-banner .dev-slogans span:nth-child(2){animation-delay:5s}
+#dev-banner .dev-slogans span:nth-child(3){animation-delay:10s}
+#dev-banner a.dev-btn{position:relative;isolation:isolate;flex:none;display:inline-flex!important;flex-direction:row!important;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:12px;margin:0;padding:8px 24px 8px 8px;border-radius:999px;text-decoration:none;color:#fff!important;background:linear-gradient(110deg,transparent 40%,rgba(255,255,255,.38) 50%,transparent 60%) 220% 0/260% 100% no-repeat,linear-gradient(135deg,#4f8dff 0%,#7a5cff 55%,#9b4dff 100%);box-shadow:0 12px 32px -12px rgba(122,92,255,.85),inset 0 1px 0 rgba(255,255,255,.32);animation:dbShine 6s ease-in-out infinite;transition:transform .35s cubic-bezier(.22,1,.36,1),filter .3s;-webkit-tap-highlight-color:transparent}
+#dev-banner a.dev-btn::after{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;box-shadow:0 0 0 0 rgba(122,92,255,0);animation:dbRing 6s ease-out infinite}
+#dev-banner a.dev-btn:hover{transform:translateY(-2px);filter:brightness(1.07)}
+#dev-banner a.dev-btn:focus-visible{outline:2px solid #c9e7a8;outline-offset:4px}
+#dev-banner .dev-btn-logo{width:38px;height:38px;flex:none;display:block;margin:0}
+#dev-banner .dev-btn-logo svg{width:38px;height:38px;display:block}
+#dev-banner .dev-btn-text{display:block;flex:0 1 auto;font:700 15px/1 Oswald,"Arial Narrow",sans-serif;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;color:#fff}
+#dev-banner .dev-tap{position:absolute;right:30px;bottom:-16px;width:26px;height:26px;pointer-events:none;opacity:0;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45));animation:dbTap 6s ease-in-out infinite}
+#dev-banner .dev-tap svg{width:26px;height:26px;display:block}
 @keyframes dbDriftA{from{transform:translate3d(-4%,0,0) scale(1)}to{transform:translate3d(22%,-12%,0) scale(1.2)}}
 @keyframes dbDriftB{from{transform:translate3d(4%,0,0) scale(1.15)}to{transform:translate3d(-24%,-10%,0) scale(.95)}}
 @keyframes dbRise{0%{transform:translateY(0);opacity:0}12%{opacity:.9}80%{opacity:.35}100%{transform:translateY(-190px);opacity:0}}
-@keyframes dbSlogan{0%{opacity:0;transform:translateY(10px);filter:blur(3px)}4%,29%{opacity:1;transform:none;filter:none}33.3%,100%{opacity:0;transform:translateY(-10px);filter:blur(3px)}}
+@keyframes dbSlogan{0%{opacity:0;transform:translateY(10px)}4%,29%{opacity:1;transform:none}33.3%,100%{opacity:0;transform:translateY(-10px)}}
 @keyframes dbShine{0%,55%{background-position:220% 0,0 0}75%,100%{background-position:-60% 0,0 0}}
 @keyframes dbRing{0%,64%{box-shadow:0 0 0 0 rgba(122,92,255,0)}66%{box-shadow:0 0 0 0 rgba(122,92,255,.6)}92%,100%{box-shadow:0 0 0 20px rgba(122,92,255,0)}}
+@keyframes dbRingS{0%,64%{box-shadow:0 0 0 0 rgba(122,92,255,0)}66%{box-shadow:0 0 0 0 rgba(122,92,255,.6)}92%,100%{box-shadow:0 0 0 12px rgba(122,92,255,0)}}
 @keyframes dbTap{0%,48%{opacity:0;transform:translate(26px,20px)}58%{opacity:1;transform:translate(0,0)}64%{opacity:1;transform:translate(-1px,-1px) scale(.84)}70%{opacity:1;transform:translate(0,0)}86%{opacity:1}96%,100%{opacity:0;transform:translate(16px,12px)}}
-@media (max-width:720px){.dev-in{flex-direction:column;text-align:center;gap:22px}.dev-kicker{letter-spacing:.16em}.dev-btn{align-self:center}}
-@media (prefers-reduced-motion:reduce){.dev-glow,.dev-dots b,.dev-btn,.dev-btn::after,.dev-tap,.dev-slogans span{animation:none}.dev-dots,.dev-tap{display:none}.dev-slogans span:not(:first-child){display:none}.dev-slogans span:first-child{opacity:1}}
+@media (max-width:720px){
+#dev-banner{padding:34px 20px 48px}
+#dev-banner .dev-in{flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center}
+#dev-banner .dev-copy{width:100%;flex:none}
+#dev-banner .dev-kicker{margin:0 0 12px;font-size:11px;letter-spacing:.14em}
+#dev-banner .dev-slogans{font-size:19px;line-height:1.3;text-align:center;min-height:5em;align-content:start}
+#dev-banner .dev-slogans span{text-align:center}
+#dev-banner a.dev-btn{width:min(100%,330px);justify-content:center;gap:10px;padding:8px 18px 8px 8px}
+#dev-banner a.dev-btn::after{animation-name:dbRingS}
+#dev-banner .dev-btn-logo,#dev-banner .dev-btn-logo svg{width:36px;height:36px}
+#dev-banner .dev-btn-text{font-size:14.5px;letter-spacing:.07em}
+#dev-banner .dev-tap{right:26px;bottom:-14px;width:24px;height:24px}
+#dev-banner .dev-tap svg{width:24px;height:24px}
+#dev-banner .dev-glow--a{width:90vw;height:240px;bottom:-45%}
+#dev-banner .dev-glow--b{width:80vw;height:240px;bottom:-50%}
+}
+@media (max-width:360px){
+#dev-banner .dev-btn-text{font-size:13px;letter-spacing:.05em}
+#dev-banner .dev-slogans{font-size:17px}
+}
+@media (prefers-reduced-motion:reduce){
+#dev-banner .dev-glow,#dev-banner .dev-dots b,#dev-banner a.dev-btn,#dev-banner a.dev-btn::after,#dev-banner .dev-tap,#dev-banner .dev-slogans span{animation:none}
+#dev-banner .dev-dots,#dev-banner .dev-tap{display:none}
+#dev-banner .dev-slogans span:not(:first-child){display:none}
+#dev-banner .dev-slogans span:first-child{opacity:1}
+}

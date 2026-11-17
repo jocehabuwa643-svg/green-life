@@ -1,0 +1,26 @@
+name: dev-banner-bust
+on:
+  push:
+    paths:
+      - css/dev-banner.css
+permissions:
+  contents: write
+  pages: write
+jobs:
+  bust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: bump css version in index.html
+        run: |
+          sed -i -E "s#dev-banner\.css\?v=[0-9]+#dev-banner.css?v=$(date +%s)#" index.html
+          git config user.name "jocehabuwa643-svg"
+          git config user.email "266165938+jocehabuwa643-svg@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Bump dev-banner.css version"
+          git push
+      - name: trigger pages build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST repos/${{ github.repository }}/pages/builds || true
