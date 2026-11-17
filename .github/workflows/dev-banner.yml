@@ -1,0 +1,28 @@
+name: dev-banner
+on:
+  push:
+    paths:
+      - .github/workflows/dev-banner.yml
+      - .github/patch_banner.py
+      - .github/dev-banner.html
+permissions:
+  contents: write
+  pages: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 .github/patch_banner.py
+      - name: commit patched site
+        run: |
+          git config user.name "jocehabuwa643-svg"
+          git config user.email "266165938+jocehabuwa643-svg@users.noreply.github.com"
+          git add index.html css/main.css src/build.mjs
+          git diff --cached --quiet && exit 0
+          git commit -m "Подвал: анимированный баннер разработчика без рамки"
+          git push
+      - name: trigger pages build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST repos/${{ github.repository }}/pages/builds || true
